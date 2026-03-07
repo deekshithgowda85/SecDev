@@ -114,7 +114,7 @@ export default function LoginPage() {
           </form>
 
           {/* Divider */}
-          <div className="flex items-center gap-3 mt-6">
+          <div className="flex items-center gap-3 mt-4">
             <div className="flex-1 h-px bg-zinc-800" />
             <span className="text-xs text-zinc-600">or continue with</span>
             <div className="flex-1 h-px bg-zinc-800" />
@@ -124,7 +124,7 @@ export default function LoginPage() {
           <button
             type="button"
             onClick={() => signIn("github", { callbackUrl: "/console/dashboard" })}
-            className="mt-3 w-full flex items-center justify-center gap-3 rounded-2xl border border-zinc-700 bg-zinc-900 hover:bg-zinc-800 px-4 py-3.5 text-sm font-semibold text-white transition-colors"
+            className="mt-2 w-full flex items-center justify-center gap-3 rounded-2xl border border-zinc-700 bg-zinc-900 hover:bg-zinc-800 px-4 py-3.5 text-sm font-semibold text-white transition-colors"
           >
             <Github className="w-4 h-4" />
             Sign in with GitHub

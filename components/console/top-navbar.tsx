@@ -107,7 +107,7 @@ export function ConsoleTopNav() {
               // eslint-disable-next-line @next/next/no-img-element
               <img src={avatarImage} alt={displayName} className="w-6 h-6 rounded-full object-cover shrink-0" />
             ) : (
-              <div className="w-6 h-6 rounded-full bg-indigo-600 flex items-center justify-center text-xs text-white font-semibold shrink-0">
+              <div className="w-6 h-6 rounded-full bg-gray-900 dark:bg-white flex items-center justify-center text-xs text-white dark:text-gray-900 font-semibold shrink-0">
                 {avatarInitial}
               </div>
             )}

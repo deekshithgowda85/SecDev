@@ -6,10 +6,11 @@ import { cn } from '@/lib/utils';
 import { MenuToggleIcon } from '@/components/ui/menu-toggle-icon';
 import { useScroll } from '@/components/ui/use-scroll';
 import { ThemeToggle } from '@/components/theme-toggle';
+import { useSession, signOut } from 'next-auth/react';
 
 const links = [
   { label: 'Features', href: '/features' },
-  { label: 'Solution', href: '/solutions' },
+  { label: 'Docs', href: '/docs' },
   { label: 'Pricing', href: '/pricing' },
   { label: 'About', href: '/about' },
   { label: 'Console', href: '/console' },
@@ -18,6 +19,7 @@ const links = [
 export function Navbar() {
   const [open, setOpen] = React.useState(false);
   const scrolled = useScroll(10);
+  const { data: session, status } = useSession();
 
   React.useEffect(() => {
     document.body.style.overflow = open ? 'hidden' : '';
@@ -54,12 +56,29 @@ export function Navbar() {
             </Link>
           ))}
           <ThemeToggle />
-          <Button variant="outline" size="default" asChild>
-            <Link href="/login">Sign In</Link>
-          </Button>
-          <Button size="default" asChild>
-            <Link href="/register">Get Started</Link>
-          </Button>
+          {status === 'loading' ? null : session ? (
+            <>
+              <Button variant="outline" size="default" asChild>
+                <Link href="/console/dashboard">Console</Link>
+              </Button>
+              <Button
+                size="default"
+                variant="outline"
+                onClick={() => signOut({ callbackUrl: '/' })}
+              >
+                Sign Out
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button variant="outline" size="default" asChild>
+                <Link href="/login">Sign In</Link>
+              </Button>
+              <Button size="default" asChild>
+                <Link href="/register">Get Started</Link>
+              </Button>
+            </>
+          )}
         </div>
 
         {/* Mobile actions */}
@@ -98,12 +117,25 @@ export function Navbar() {
             ))}
           </div>
           <div className="flex flex-col gap-2">
-            <Button variant="outline" className="w-full" asChild>
-              <Link href="/login" onClick={() => setOpen(false)}>Sign In</Link>
-            </Button>
-            <Button className="w-full" asChild>
-              <Link href="/register" onClick={() => setOpen(false)}>Get Started</Link>
-            </Button>
+            {session ? (
+              <>
+                <Button variant="outline" className="w-full" asChild>
+                  <Link href="/console/dashboard" onClick={() => setOpen(false)}>Console</Link>
+                </Button>
+                <Button className="w-full" onClick={() => { setOpen(false); signOut({ callbackUrl: '/' }); }}>
+                  Sign Out
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button variant="outline" className="w-full" asChild>
+                  <Link href="/login" onClick={() => setOpen(false)}>Sign In</Link>
+                </Button>
+                <Button className="w-full" asChild>
+                  <Link href="/register" onClick={() => setOpen(false)}>Get Started</Link>
+                </Button>
+              </>
+            )}
           </div>
         </div>
       </div>

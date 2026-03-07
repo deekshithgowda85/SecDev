@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import {
   LayoutDashboard, Rocket, FolderGit2, Github, KeyRound, Terminal,
   TestTube2, Shield, Zap, BarChart3, Box, Settings, CreditCard, User,
-  ChevronLeft, ChevronRight, ChevronDown, ChevronUp,
+  ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Database,
 } from "lucide-react";
 
 interface NavItem { label: string; href: string; icon: React.ElementType; }
@@ -17,13 +17,12 @@ const navGroups: NavGroup[] = [
     items: [
       { label: "Dashboard", href: "/console/dashboard", icon: LayoutDashboard },
       { label: "Deployments", href: "/console/deployments", icon: Rocket },
-      { label: "Projects", href: "/console/projects", icon: FolderGit2 },
     ],
   },
   {
     title: "Integrations",
     items: [
-      { label: "GitHub", href: "/console/github", icon: Github },
+      { label: "Projects", href: "/console/projects", icon: FolderGit2 },
       { label: "Environment Vars", href: "/console/env", icon: KeyRound },
       { label: "Logs", href: "/console/logs", icon: Terminal },
     ],
@@ -53,6 +52,23 @@ const navGroups: NavGroup[] = [
   },
 ];
 
+function SecDevMark({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
+      <defs>
+        <linearGradient id="sb-grad" x1="0" y1="0" x2="28" y2="28" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#9B99FE" />
+          <stop offset="1" stopColor="#2BC8B7" />
+        </linearGradient>
+      </defs>
+      <rect x="2" y="2" width="10" height="10" rx="2" fill="url(#sb-grad)" />
+      <rect x="16" y="2" width="10" height="10" rx="2" fill="url(#sb-grad)" opacity="0.7" />
+      <rect x="2" y="16" width="10" height="10" rx="2" fill="url(#sb-grad)" opacity="0.7" />
+      <rect x="16" y="16" width="10" height="10" rx="2" fill="url(#sb-grad)" opacity="0.4" />
+    </svg>
+  );
+}
+
 export function ConsoleSidebar() {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
@@ -73,9 +89,7 @@ export function ConsoleSidebar() {
           collapsed ? "justify-center" : ""
         }`}
       >
-        <div className="w-7 h-7 rounded-lg bg-indigo-600 flex items-center justify-center shrink-0">
-          <span className="text-white text-xs font-bold">SD</span>
-        </div>
+        <SecDevMark className="w-7 h-7 shrink-0" />
         {!collapsed && (
           <span className="text-gray-900 dark:text-white font-semibold text-sm">SecDev</span>
         )}
@@ -111,7 +125,7 @@ export function ConsoleSidebar() {
                       title={collapsed ? item.label : undefined}
                       className={`flex items-center gap-2.5 px-2 py-2 rounded-lg text-sm transition-colors ${
                         isActive
-                          ? "bg-indigo-50 text-indigo-600 dark:bg-indigo-600/15 dark:text-indigo-400 font-medium"
+                          ? "bg-gray-900 text-white dark:bg-white dark:text-gray-900 font-medium"
                           : "text-gray-600 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-zinc-200 hover:bg-gray-100 dark:hover:bg-zinc-800"
                       } ${collapsed ? "justify-center" : ""}`}
                     >

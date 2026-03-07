@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import {
   Globe, Play, RefreshCw, CheckCircle2, XCircle, AlertTriangle,
-  Sparkles, Loader2, ExternalLink, Link2, Terminal, Eye, LayoutDashboard, Download,
+  Sparkles, Loader2, ExternalLink, Link2, Terminal, Eye, LayoutDashboard, Download, Square,
 } from "lucide-react";
 
 const DEPLOY_STATUS_BADGE: Record<string, string> = {
@@ -175,6 +175,17 @@ export default function Page() {
     } catch { /* ignore */ }
   };
 
+  const handleStop = async (runId: string) => {
+    try {
+      await fetch("/api/tests/stop", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ runId }),
+      });
+      await fetchRuns();
+    } catch { /* ignore */ }
+  };
+
   useEffect(() => {
     if (runs.some((r) => r.status === "running")) {
       const interval = setInterval(fetchRuns, 8000);
@@ -332,6 +343,14 @@ export default function Page() {
                 </div>
               </div>
               <div className="flex items-center gap-2">
+                {run.status === "running" && (
+                  <button
+                    onClick={(e) => { e.stopPropagation(); handleStop(run.id); }}
+                    className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/30 rounded-lg hover:bg-red-100 dark:hover:bg-red-500/20 transition-colors"
+                  >
+                    <Square className="w-3 h-3 fill-current" /> Stop
+                  </button>
+                )}
                 {run.status === "completed" && (
                   <>
                     <button

@@ -1,0 +1,16 @@
+# This is a config for E2B sandbox template.
+# You can use template ID (qg1v6gyvxew6q52r04lp) or template name (secdev-web-runtime) to create a sandbox:
+
+# Python SDK
+# from e2b import Sandbox, AsyncSandbox
+# sandbox = Sandbox.create("secdev-web-runtime") # Sync sandbox
+# sandbox = await AsyncSandbox.create("secdev-web-runtime") # Async sandbox
+
+# JS SDK
+# import { Sandbox } from 'e2b'
+# const sandbox = await Sandbox.create('secdev-web-runtime')
+
+team_id = "642b2d05-ac91-453e-a718-cde97eff0d35"
+dockerfile = "Dockerfile"
+template_name = "secdev-web-runtime"
+template_id = "qg1v6gyvxew6q52r04lp"

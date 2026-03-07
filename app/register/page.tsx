@@ -4,6 +4,8 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Eye, EyeOff } from "lucide-react";
 import { signUpWithEmail } from "@/lib/firebase";
+import { signIn } from "next-auth/react";
+import { Github } from "lucide-react";
 
 export default function RegisterPage() {
   const [email, setEmail] = useState("");
@@ -100,6 +102,23 @@ export default function RegisterPage() {
               {loading ? "Creating account…" : "Create Account"}
             </button>
           </form>
+
+          {/* Divider */}
+          <div className="flex items-center gap-3 mt-4">
+            <div className="flex-1 h-px bg-zinc-800" />
+            <span className="text-xs text-zinc-600">or continue with</span>
+            <div className="flex-1 h-px bg-zinc-800" />
+          </div>
+
+          {/* GitHub OAuth */}
+          <button
+            type="button"
+            onClick={() => signIn("github", { callbackUrl: "/console/dashboard" })}
+            className="mt-2 w-full flex items-center justify-center gap-3 rounded-2xl border border-zinc-700 bg-zinc-900 hover:bg-zinc-800 px-4 py-3.5 text-sm font-semibold text-white transition-colors"
+          >
+            <Github className="w-4 h-4" />
+            Sign up with GitHub
+          </button>
 
           {/* Sign in link */}
           <p className="mt-6 text-center text-sm text-zinc-500">

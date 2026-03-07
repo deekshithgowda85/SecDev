@@ -154,6 +154,7 @@ export default function Page() {
   useEffect(() => {
     const runningRun = runs.find((r) => r.status === "running");
     if (runningRun && liveRunId !== runningRun.id) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional: detect newly running test
       setLiveRunId(runningRun.id);
       setLogs([]);
       setLastLogId(0);

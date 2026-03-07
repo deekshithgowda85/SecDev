@@ -15,9 +15,6 @@ export function getDb() {
 
 let tablesReady = false;
 
-// Bump this version whenever schema migrations are added so ensureTables() re-runs
-const SCHEMA_VERSION = 4;
-
 export async function ensureTables(): Promise<void> {
   if (tablesReady) return;
   const sql = getDb();

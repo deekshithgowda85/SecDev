@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { startDeployment } from "@/lib/deployer";
+import { startDeployment, listSandboxes } from "@/lib/deployer";
 
 export async function POST(request: Request) {
   try {
@@ -12,7 +12,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "repo_url required" }, { status: 400 });
     }
 
-    const result = await startDeployment(targetUrl);
+    const result = await startDeployment(targetUrl, { branch: branch ?? "main" });
 
     return NextResponse.json({
       ok: true,
@@ -23,6 +23,16 @@ export async function POST(request: Request) {
         branch: branch ?? "main",
       },
     });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
+    return NextResponse.json({ ok: false, error: message }, { status: 500 });
+  }
+}
+
+export async function GET() {
+  try {
+    const sandboxes = await listSandboxes();
+    return NextResponse.json({ ok: true, sandboxes });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
     return NextResponse.json({ ok: false, error: message }, { status: 500 });

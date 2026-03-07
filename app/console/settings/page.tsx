@@ -20,7 +20,7 @@ function Input({ defaultValue, placeholder }: { defaultValue?: string; placehold
     <input
       defaultValue={defaultValue}
       placeholder={placeholder}
-      className="w-full bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-indigo-400 dark:focus:border-indigo-500 transition-colors"
+      className="w-full bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-gray-500 dark:focus:border-zinc-400 transition-colors"
     />
   );
 }
@@ -29,7 +29,7 @@ function Select({ defaultValue, options }: { defaultValue: string; options: stri
   return (
     <select
       defaultValue={defaultValue}
-      className="w-full bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-indigo-400 dark:focus:border-indigo-500 transition-colors"
+      className="w-full bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-gray-500 dark:focus:border-zinc-400 transition-colors"
     >
       {options.map((o) => <option key={o}>{o}</option>)}
     </select>
@@ -112,7 +112,7 @@ export default function SettingsPage() {
                   <GitBranch className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 dark:text-zinc-500" />
                   <input
                     defaultValue="main"
-                    className="w-full pl-8 bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-indigo-400 dark:focus:border-indigo-500 transition-colors"
+                    className="w-full pl-8 bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-gray-500 dark:focus:border-zinc-400 transition-colors"
                   />
                 </div>
               </Field>
@@ -137,8 +137,8 @@ export default function SettingsPage() {
                 </div>
               ))}
               <div className="flex gap-2 mt-4">
-                <input placeholder="Add another domain..." className="flex-1 bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-indigo-400 dark:focus:border-indigo-500 transition-colors" />
-                <button className="px-3 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-500 rounded-lg transition-colors">Add</button>
+                <input placeholder="Add another domain..." className="flex-1 bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-gray-500 dark:focus:border-zinc-400 transition-colors" />
+                <button className="px-3 py-2 text-sm font-medium text-white bg-gray-900 dark:bg-white dark:text-gray-900 hover:bg-gray-700 dark:hover:bg-gray-100 rounded-lg transition-colors">Add</button>
               </div>
             </div>
           </>
@@ -173,7 +173,7 @@ export default function SettingsPage() {
           className={`flex items-center gap-2 px-5 py-2 text-sm font-medium rounded-lg transition-all ${
             saved
               ? "bg-green-600 text-white"
-              : "bg-indigo-600 hover:bg-indigo-500 text-white"
+              : "bg-gray-900 dark:bg-white dark:text-gray-900 hover:bg-gray-700 dark:hover:bg-gray-100 text-white"
           }`}
         >
           <Save className="w-4 h-4" />

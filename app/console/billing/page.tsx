@@ -28,7 +28,7 @@ const PLANS = [
 
 function UsageBar({ label, used, max, unit }: { label: string; used: number; max: number; unit: string }) {
   const pct = Math.min((used / max) * 100, 100);
-  const color = pct > 80 ? "bg-red-500" : pct > 60 ? "bg-yellow-500" : "bg-indigo-500";
+  const color = pct > 80 ? "bg-red-500" : pct > 60 ? "bg-yellow-500" : "bg-gray-900 dark:bg-white";
   return (
     <div>
       <div className="flex items-center justify-between mb-1.5">
@@ -68,7 +68,7 @@ export default function BillingPage() {
         </div>
         <p className="text-sm text-gray-500 dark:text-zinc-500 mb-4">Next billing date: <span className="text-gray-700 dark:text-zinc-300 font-medium">April 7, 2026</span></p>
         <div className="flex gap-3">
-          <button className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-500 rounded-lg transition-colors">
+          <button className="px-4 py-2 text-sm font-medium text-white bg-gray-900 dark:bg-white dark:text-gray-900 hover:bg-gray-700 dark:hover:bg-gray-100 rounded-lg transition-colors">
             Upgrade to Team
           </button>
           <button
@@ -108,7 +108,7 @@ export default function BillingPage() {
               key={plan.name}
               className={`rounded-xl border p-5 flex flex-col gap-4 ${
                 plan.current
-                  ? "border-indigo-400 dark:border-indigo-500 bg-indigo-50 dark:bg-indigo-600/10"
+                  ? "border-gray-900 dark:border-white bg-gray-50 dark:bg-zinc-800"
                   : "border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-900"
               }`}
             >
@@ -116,7 +116,7 @@ export default function BillingPage() {
                 <div className="flex items-center justify-between mb-1">
                   <span className="text-base font-bold text-gray-900 dark:text-white">{plan.name}</span>
                   {plan.current && (
-                    <span className="text-xs bg-indigo-600 text-white px-2 py-0.5 rounded-full font-medium">Current</span>
+                    <span className="text-xs bg-gray-900 dark:bg-white dark:text-gray-900 text-white px-2 py-0.5 rounded-full font-medium">Current</span>
                   )}
                 </div>
                 <p className="text-2xl font-bold text-gray-900 dark:text-white">{plan.price}<span className="text-sm text-gray-400 dark:text-zinc-500 font-normal">/mo</span></p>
@@ -133,7 +133,7 @@ export default function BillingPage() {
                 disabled={plan.current}
                 className={`w-full py-2 rounded-lg text-sm font-medium transition-colors ${
                   plan.current
-                    ? "bg-indigo-200 dark:bg-indigo-600/30 text-indigo-600 dark:text-indigo-400 cursor-default"
+                    ? "bg-gray-200 dark:bg-zinc-700 text-gray-600 dark:text-zinc-400 cursor-default"
                     : "border border-gray-200 dark:border-zinc-700 text-gray-700 dark:text-zinc-300 hover:bg-gray-50 dark:hover:bg-zinc-800"
                 }`}
               >
@@ -148,7 +148,7 @@ export default function BillingPage() {
       <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl p-6">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-sm font-semibold text-gray-900 dark:text-white">Payment Method</h2>
-          <button className="text-xs text-indigo-500 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">Update</button>
+          <button className="text-xs text-gray-700 dark:text-zinc-300 hover:text-gray-900 dark:hover:text-white transition-colors">Update</button>
         </div>
         <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-zinc-800 rounded-lg">
           <CreditCard className="w-5 h-5 text-gray-400 dark:text-zinc-500" />
@@ -179,7 +179,7 @@ export default function BillingPage() {
                 <span className="text-xs text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-500/20">
                   {inv.status}
                 </span>
-                <button className="text-xs text-indigo-500 hover:underline">Download</button>
+                <button className="text-xs text-gray-700 dark:text-zinc-300 hover:underline">Download</button>
               </div>
             </div>
           ))}

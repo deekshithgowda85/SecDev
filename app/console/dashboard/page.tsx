@@ -42,8 +42,8 @@ export default function DashboardPage() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           title="Total Deployments"
-          icon={<Rocket className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />}
-          accentBg="bg-indigo-100 dark:bg-indigo-600/20"
+          icon={<Rocket className="w-4 h-4 text-gray-700 dark:text-zinc-300" />}
+          accentBg="bg-gray-100 dark:bg-zinc-800"
         />
         <StatCard
           title="Active Sandboxes"

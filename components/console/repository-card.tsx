@@ -51,7 +51,7 @@ export function RepositoryCard({ repo, onDeploy, deploying }: RepositoryCardProp
   const langColor = repo.language ? (LANG_COLORS[repo.language] ?? "bg-gray-400") : null;
 
   return (
-    <div className="group bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl p-4 hover:border-indigo-300 dark:hover:border-indigo-600 hover:shadow-sm transition-all">
+    <div className="group bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl p-4 hover:border-gray-400 dark:hover:border-zinc-600 hover:shadow-sm transition-all">
       {/* Header */}
       <div className="flex items-start justify-between gap-3 mb-2">
         <div className="flex-1 min-w-0">
@@ -94,7 +94,7 @@ export function RepositoryCard({ repo, onDeploy, deploying }: RepositoryCardProp
         <button
           onClick={() => onDeploy(repo)}
           disabled={deploying}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-gray-900 dark:bg-white dark:text-gray-900 hover:bg-gray-700 dark:hover:bg-gray-100 active:bg-gray-800 dark:active:bg-gray-200 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <Rocket className="w-3.5 h-3.5" />
           {deploying ? "Deploying…" : "Deploy"}

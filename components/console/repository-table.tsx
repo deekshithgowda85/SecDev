@@ -81,7 +81,7 @@ export function RepositoryTable({ repos, onDeploy, deployingId }: RepositoryTabl
                     <button
                       onClick={() => onDeploy(repo)}
                       disabled={isDeploying}
-                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-500 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-gray-900 dark:bg-white dark:text-gray-900 hover:bg-gray-700 dark:hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
                     >
                       <Rocket className="w-3 h-3" />
                       {isDeploying ? "Deploying…" : "Deploy"}

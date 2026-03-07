@@ -1,0 +1,6 @@
+# E2B sandbox template for SecDev web deployments
+# Supports React, Next.js, Vite, and static HTML projects
+
+name = "secdev-web-runtime"
+dockerfile = "Dockerfile"
+start_cmd = "/home/user/start.sh"

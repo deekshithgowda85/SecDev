@@ -1,15 +1,11 @@
 "use client";
 import React, { useState } from "react";
 import Link from "next/link";
-import { Bell, Search, ChevronDown, LogOut, User, Settings, Sun, Moon, CheckCircle2, Github } from "lucide-react";
+import { Bell, Search, ChevronDown, LogOut, User, Settings, Sun, Moon, Github, Rocket } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useSession, signIn, signOut } from "next-auth/react";
 
-const PROJECTS = ["SecDev API", "SecDev UI", "SecDev Worker"];
-
 export function ConsoleTopNav() {
-  const [selectedProject, setSelectedProject] = useState("SecDev API");
-  const [projectOpen, setProjectOpen] = useState(false);
   const [userOpen, setUserOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const { theme, setTheme } = useTheme();
@@ -17,7 +13,7 @@ export function ConsoleTopNav() {
 
   React.useEffect(() => setMounted(true), []);
 
-  const close = () => { setProjectOpen(false); setUserOpen(false); };
+  const close = () => { setUserOpen(false); };
 
   // Derive display name and avatar initial from session
   const displayName = session?.user?.name ?? session?.user?.email?.split("@")[0] ?? "User";
@@ -26,40 +22,14 @@ export function ConsoleTopNav() {
 
   return (
     <header className="flex items-center h-14 px-4 border-b border-gray-200 dark:border-zinc-800 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-sm gap-3 shrink-0">
-      {/* Project selector */}
-      <div className="relative">
-        <button
-          onClick={() => { setProjectOpen(!projectOpen); setUserOpen(false); }}
-          className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-zinc-800 hover:bg-gray-200 dark:hover:bg-zinc-700 text-sm text-gray-800 dark:text-white transition-colors"
-        >
-          <span className="w-2 h-2 rounded-full bg-green-500 shrink-0" />
-          <span>{selectedProject}</span>
-          <ChevronDown className="w-3.5 h-3.5 text-gray-500 dark:text-zinc-400" />
-        </button>
-        {projectOpen && (
-          <div className="absolute top-full left-0 mt-1 w-52 bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-xl shadow-lg z-50 py-1">
-            {PROJECTS.map((p) => (
-              <button
-                key={p}
-                onClick={() => { setSelectedProject(p); close(); }}
-                className="flex items-center justify-between w-full px-4 py-2 text-sm text-gray-700 dark:text-zinc-300 hover:bg-gray-100 dark:hover:bg-zinc-700 hover:text-gray-900 dark:hover:text-white transition-colors"
-              >
-                {p}
-                {p === selectedProject && <CheckCircle2 className="w-4 h-4 text-indigo-500" />}
-              </button>
-            ))}
-            <div className="border-t border-gray-200 dark:border-zinc-700 mt-1 pt-1">
-              <Link
-                href="/console/projects"
-                onClick={close}
-                className="block w-full px-4 py-2 text-sm text-indigo-600 dark:text-indigo-400 hover:bg-gray-100 dark:hover:bg-zinc-700 text-left transition-colors"
-              >
-                + New Project
-              </Link>
-            </div>
-          </div>
-        )}
-      </div>
+      {/* Quick nav */}
+      <Link
+        href="/console/deployments"
+        className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-zinc-800 hover:bg-gray-200 dark:hover:bg-zinc-700 text-sm text-gray-800 dark:text-white transition-colors"
+      >
+        <Rocket className="w-3.5 h-3.5" />
+        <span>Deployments</span>
+      </Link>
 
       {/* Search */}
       <div className="flex-1 max-w-xs">
@@ -68,7 +38,7 @@ export function ConsoleTopNav() {
           <input
             type="text"
             placeholder="Search..."
-            className="w-full bg-gray-100 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-lg pl-8 pr-3 py-1.5 text-sm text-gray-800 dark:text-zinc-300 placeholder:text-gray-400 dark:placeholder:text-zinc-600 focus:outline-none focus:border-indigo-400 dark:focus:border-indigo-500 transition-colors"
+            className="w-full bg-gray-100 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-lg pl-8 pr-3 py-1.5 text-sm text-gray-800 dark:text-zinc-300 placeholder:text-gray-400 dark:placeholder:text-zinc-600 focus:outline-none focus:border-gray-500 dark:focus:border-zinc-400 transition-colors"
           />
         </div>
       </div>
@@ -100,7 +70,7 @@ export function ConsoleTopNav() {
         {/* User menu */}
         <div className="relative ml-1">
           <button
-            onClick={() => { setUserOpen(!userOpen); setProjectOpen(false); }}
+            onClick={() => { setUserOpen(!userOpen); }}
             className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors"
           >
             {avatarImage ? (

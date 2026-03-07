@@ -53,7 +53,7 @@ export default function AccountPage() {
           {/* Avatar */}
           <div className="flex items-center gap-4">
             <div className="relative group cursor-pointer">
-              <div className="w-16 h-16 rounded-full bg-indigo-600 flex items-center justify-center text-2xl text-white font-bold select-none">
+              <div className="w-16 h-16 rounded-full bg-gray-900 dark:bg-white flex items-center justify-center text-2xl text-white dark:text-gray-900 font-bold select-none">
                 D
               </div>
               <div className="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
@@ -69,26 +69,26 @@ export default function AccountPage() {
           <Field label="Display Name">
             <input
               defaultValue="Deekshith Gowda"
-              className="w-full bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-indigo-400 dark:focus:border-indigo-500 transition-colors"
+              className="w-full bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-gray-500 dark:focus:border-zinc-400 transition-colors"
             />
           </Field>
           <Field label="Email Address" hint="Your email is managed through your authentication provider.">
             <input
               defaultValue="deekshith@secdev.app"
               readOnly
-              className="w-full bg-gray-100 dark:bg-zinc-800/60 border border-gray-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm text-gray-500 dark:text-zinc-500 cursor-not-allowed"
+              className="w-full bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-gray-500 dark:focus:border-zinc-400 transition-colors"
             />
           </Field>
           <Field label="Username">
             <input
               defaultValue="deekshithgowda85"
-              className="w-full bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-indigo-400 dark:focus:border-indigo-500 transition-colors"
+              className="w-full bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-gray-500 dark:focus:border-zinc-400 transition-colors"
             />
           </Field>
           <button
             onClick={saveProfile}
             className={`flex items-center gap-2 px-5 py-2 text-sm font-medium rounded-lg transition-colors ${
-              profileSaved ? "bg-green-600 text-white" : "bg-indigo-600 hover:bg-indigo-500 text-white"
+              profileSaved ? "bg-green-600 text-white" : "bg-gray-900 dark:bg-white dark:text-gray-900 hover:bg-gray-700 dark:hover:bg-gray-100 text-white"
             }`}
           >
             {profileSaved && <Check className="w-4 h-4" />}
@@ -105,7 +105,7 @@ export default function AccountPage() {
               <input
                 type={showOld ? "text" : "password"}
                 placeholder="••••••••"
-                className="w-full bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-lg px-3 py-2 pr-10 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-indigo-400 dark:focus:border-indigo-500 transition-colors"
+                className="w-full bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-lg px-3 py-2 pr-10 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-gray-500 dark:focus:border-zinc-400 transition-colors"
               />
               <button
                 type="button"
@@ -121,7 +121,7 @@ export default function AccountPage() {
               <input
                 type={showNew ? "text" : "password"}
                 placeholder="••••••••"
-                className="w-full bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-lg px-3 py-2 pr-10 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-indigo-400 dark:focus:border-indigo-500 transition-colors"
+                className="w-full bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-lg px-3 py-2 pr-10 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-gray-500 dark:focus:border-zinc-400 transition-colors"
               />
               <button
                 type="button"
@@ -135,7 +135,7 @@ export default function AccountPage() {
           <button
             onClick={savePw}
             className={`flex items-center gap-2 px-5 py-2 text-sm font-medium rounded-lg transition-colors ${
-              pwSaved ? "bg-green-600 text-white" : "bg-indigo-600 hover:bg-indigo-500 text-white"
+              pwSaved ? "bg-green-600 text-white" : "bg-gray-900 dark:bg-white dark:text-gray-900 hover:bg-gray-700 dark:hover:bg-gray-100 text-white"
             }`}
           >
             {pwSaved && <Check className="w-4 h-4" />}

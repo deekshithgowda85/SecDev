@@ -70,7 +70,7 @@ export function RepositoryList({
   const [error, setError] = useState<string | null>(null);
   const [view, setView] = useState<"grid" | "table">(defaultView);
   const [deployingId, setDeployingId] = useState<number | null>(null);
-  const [deployMsg, setDeployMsg] = useState<{ id: number; ok: boolean; msg: string } | null>(null);
+  const [deployMsg, setDeployMsg] = useState<{ id: number; ok: boolean; msg: string; url?: string } | null>(null);
   const [search, setSearch] = useState("");
 
   useEffect(() => {
@@ -107,7 +107,13 @@ export function RepositoryList({
       });
       const data = await res.json();
       if (res.ok && data.ok) {
-        setDeployMsg({ id: repo.id, ok: true, msg: `Deployment started for ${repo.name}` });
+        const url = data.deployment?.publicUrl;
+        setDeployMsg({
+          id: repo.id,
+          ok: true,
+          msg: `Deployment started for ${repo.name}${url ? ` — ` : ""}`,
+          url,
+        });
       } else {
         setDeployMsg({ id: repo.id, ok: false, msg: data.error ?? "Deployment failed" });
       }
@@ -115,7 +121,7 @@ export function RepositoryList({
       setDeployMsg({ id: repo.id, ok: false, msg: "Network error during deploy" });
     } finally {
       setDeployingId(null);
-      setTimeout(() => setDeployMsg(null), 4000);
+      setTimeout(() => setDeployMsg(null), 8000);
     }
   };
 
@@ -158,6 +164,16 @@ export function RepositoryList({
           }`}
         >
           {deployMsg.msg}
+          {deployMsg.url && (
+            <a
+              href={deployMsg.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline font-semibold hover:opacity-80"
+            >
+              Open Preview
+            </a>
+          )}
         </div>
       )}
 
@@ -169,7 +185,7 @@ export function RepositoryList({
             placeholder="Search repositories…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="flex-1 max-w-xs bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-zinc-500 focus:outline-none focus:border-indigo-400 dark:focus:border-indigo-500 transition-colors"
+            className="flex-1 max-w-xs bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-zinc-500 focus:outline-none focus:border-gray-500 dark:focus:border-zinc-400 transition-colors"
           />
           <span className="text-xs text-gray-500 dark:text-zinc-500 ml-auto">
             {loading ? "Loading…" : `${filtered.length} repos`}

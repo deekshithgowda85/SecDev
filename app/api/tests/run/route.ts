@@ -10,16 +10,23 @@ import { NextResponse } from "next/server";
 import { inngest } from "@/lib/inngest";
 import { getDb, ensureTables } from "@/lib/db";
 import { randomBytes } from "node:crypto";
+import { auth } from "@/lib/auth";
 
 const EVENT_MAP: Record<string, string> = {
   suite: "test/suite.run",
   security: "test/security.run",
   api: "test/api.run",
   performance: "test/performance.run",
+  vibetest: "test/vibetest.run",
 };
 
 export async function POST(request: Request) {
   try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
+    }
+    const userId = session.user.id;
     const body = await request.json();
     const { sandboxId, type } = body as { sandboxId?: string; type?: string };
 
@@ -35,17 +42,21 @@ export async function POST(request: Request) {
       );
     }
 
-    const runId = `run_${randomBytes(8).toString("hex")}`;
-
-    // Create the test run record
+    // Verify that the sandbox belongs to the requesting user
     await ensureTables();
     const sql = getDb();
+    const dep = await sql`SELECT user_id FROM deployments WHERE sandbox_id = ${sandboxId} LIMIT 1`;
+    if (dep.length > 0 && dep[0].user_id && dep[0].user_id !== userId) {
+      return NextResponse.json({ ok: false, error: "Forbidden" }, { status: 403 });
+    }
+
+    const runId = `run_${randomBytes(8).toString("hex")}`;
+
     await sql`
-      INSERT INTO test_runs (id, sandbox_id, type, status, created_at)
-      VALUES (${runId}, ${sandboxId}, ${type}, 'running', ${Date.now()})
+      INSERT INTO test_runs (id, sandbox_id, type, status, created_at, user_id)
+      VALUES (${runId}, ${sandboxId}, ${type}, 'running', ${Date.now()}, ${userId})
     `;
 
-    // Send the Inngest event
     await inngest.send({
       name: eventName,
       data: { runId, sandboxId },
@@ -60,6 +71,11 @@ export async function POST(request: Request) {
 
 export async function GET(request: Request) {
   try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
+    }
+    const userId = session.user.id;
     await ensureTables();
     const sql = getDb();
     const { searchParams } = new URL(request.url);
@@ -68,13 +84,13 @@ export async function GET(request: Request) {
 
     let rows;
     if (sandboxId && type) {
-      rows = await sql`SELECT * FROM test_runs WHERE sandbox_id = ${sandboxId} AND type = ${type} ORDER BY created_at DESC`;
+      rows = await sql`SELECT * FROM test_runs WHERE sandbox_id = ${sandboxId} AND type = ${type} AND (user_id = ${userId} OR user_id = '') ORDER BY created_at DESC`;
     } else if (sandboxId) {
-      rows = await sql`SELECT * FROM test_runs WHERE sandbox_id = ${sandboxId} ORDER BY created_at DESC`;
+      rows = await sql`SELECT * FROM test_runs WHERE sandbox_id = ${sandboxId} AND (user_id = ${userId} OR user_id = '') ORDER BY created_at DESC`;
     } else if (type) {
-      rows = await sql`SELECT * FROM test_runs WHERE type = ${type} ORDER BY created_at DESC`;
+      rows = await sql`SELECT * FROM test_runs WHERE type = ${type} AND (user_id = ${userId} OR user_id = '') ORDER BY created_at DESC`;
     } else {
-      rows = await sql`SELECT * FROM test_runs ORDER BY created_at DESC LIMIT 100`;
+      rows = await sql`SELECT * FROM test_runs WHERE (user_id = ${userId} OR user_id = '') ORDER BY created_at DESC LIMIT 100`;
     }
 
     return NextResponse.json({

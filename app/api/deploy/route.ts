@@ -1,9 +1,15 @@
 import { NextResponse } from "next/server";
 import { startDeployment, getAllDeployments } from "@/lib/deployer";
 import { getEnvVars } from "@/lib/env-store";
+import { auth } from "@/lib/auth";
 
 export async function POST(request: Request) {
   try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
+    }
+    const userId = session.user.id;
     const body = await request.json();
     const { repo_name, repo_url, branch } = body;
 
@@ -19,10 +25,12 @@ export async function POST(request: Request) {
       branch: branch ?? "main",
       repoName: repo_name ?? undefined,
       envVars: Object.keys(savedEnvVars).length > 0 ? savedEnvVars : undefined,
+      userId,
     });
 
     return NextResponse.json({
       ok: true,
+      existing: result.existing ?? false,
       deployment: {
         ...result,
         repo_name: repo_name ?? null,
@@ -36,10 +44,14 @@ export async function POST(request: Request) {
   }
 }
 
-/** Returns all deployments from the database. */
+/** Returns deployments for the authenticated user only. */
 export async function GET() {
   try {
-    const deployments = (await getAllDeployments()).map((d) => ({
+    const session = await auth();
+    if (!session?.user?.id) {
+      return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
+    }
+    const deployments = (await getAllDeployments(session.user.id)).map((d) => ({
       sandboxId: d.sandboxId,
       repoName: d.repoName,
       repoUrl: d.repoUrl,

@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import Link from "next/link";
 import {
   Zap, Play, RefreshCw, CheckCircle2, XCircle,
   Sparkles, Loader2, ExternalLink, Download,
+  Square, Terminal, ChevronDown, ChevronUp, BotMessageSquare,
 } from "lucide-react";
 
 const DEPLOY_STATUS_BADGE: Record<string, string> = {
@@ -40,12 +41,26 @@ interface ApiResult {
   response_body: string | null;
 }
 
+interface LogLine {
+  id: number;
+  level: string;
+  message: string;
+  created_at: number;
+}
+
 const METHOD_BADGE: Record<string, string> = {
   GET: "bg-green-100 text-green-700 dark:bg-green-500/15 dark:text-green-400",
   POST: "bg-blue-100 text-blue-700 dark:bg-blue-500/15 dark:text-blue-400",
   PUT: "bg-yellow-100 text-yellow-700 dark:bg-yellow-500/15 dark:text-yellow-400",
   PATCH: "bg-orange-100 text-orange-700 dark:bg-orange-500/15 dark:text-orange-400",
   DELETE: "bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-400",
+};
+
+const LOG_COLOR: Record<string, string> = {
+  success: "text-green-400",
+  error:   "text-red-400",
+  warn:    "text-yellow-400",
+  info:    "text-zinc-300",
 };
 
 const STATUS_BADGE: Record<string, string> = {
@@ -67,6 +82,18 @@ export default function Page() {
   const [analyzing, setAnalyzing] = useState(false);
   const [expandedRow, setExpandedRow] = useState<number | null>(null);
   const [deployError, setDeployError] = useState<string | null>(null);
+
+  // Live logs
+  const [logs, setLogs] = useState<LogLine[]>([]);
+  const [liveRunId, setLiveRunId] = useState<string | null>(null);
+  const [logsOpen, setLogsOpen] = useState(false);
+  const [lastLogId, setLastLogId] = useState(0);
+  const logsEndRef = useRef<HTMLDivElement>(null);
+
+  // AI Plan
+  const [planLoading, setPlanLoading] = useState(false);
+  const [plan, setPlan] = useState<Record<string, unknown> | null>(null);
+  const [planOpen, setPlanOpen] = useState(false);
 
   const selectedDeployment = deployments.find((d) => d.sandboxId === selectedSandbox);
 
@@ -101,8 +128,49 @@ export default function Page() {
     setSelectedRun(null);
     setAnalysis(null);
     setExpandedRow(null);
+    setLogs([]);
+    setLiveRunId(null);
+    setPlan(null);
     fetchRuns();
   }, [fetchRuns]);
+
+  const fetchLogs = useCallback(async (runId: string, after: number) => {
+    try {
+      const res = await fetch(`/api/tests/logs?runId=${runId}&after=${after}`);
+      const data = await res.json();
+      if (data.ok && data.logs?.length > 0) {
+        setLogs((prev) => [...prev, ...data.logs]);
+        setLastLogId(data.logs[data.logs.length - 1].id);
+      }
+    } catch { /* ignore */ }
+  }, []);
+
+  // Auto-scroll terminal
+  useEffect(() => {
+    if (logsOpen) logsEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [logs, logsOpen]);
+
+  // Detect newly running run and start streaming
+  useEffect(() => {
+    const runningRun = runs.find((r) => r.status === "running");
+    if (runningRun && liveRunId !== runningRun.id) {
+      setLiveRunId(runningRun.id);
+      setLogs([]);
+      setLastLogId(0);
+      setLogsOpen(true);
+    }
+  }, [runs, liveRunId]);
+
+  // Poll logs + runs while live
+  useEffect(() => {
+    if (!liveRunId) return;
+    const run = runs.find((r) => r.id === liveRunId);
+    if (!run || run.status !== "running") return;
+    const interval = setInterval(async () => {
+      await Promise.all([fetchLogs(liveRunId, lastLogId), fetchRuns()]);
+    }, 2000);
+    return () => clearInterval(interval);
+  }, [liveRunId, lastLogId, runs, fetchLogs, fetchRuns]);
 
   const fetchResults = async (runId: string) => {
     setSelectedRun(runId);
@@ -113,6 +181,11 @@ export default function Page() {
       const data = await res.json();
       if (data.ok) setResults(data.results ?? []);
     } catch { /* ignore */ }
+    // Load historical logs for completed run
+    setLogs([]);
+    setLastLogId(0);
+    setLiveRunId(runId);
+    await fetchLogs(runId, 0);
   };
 
   const handleRun = async () => {
@@ -128,14 +201,45 @@ export default function Page() {
       });
       const data = await res.json();
       if (data.ok) {
+        setLiveRunId(data.runId);
+        setLogs([]);
+        setLastLogId(0);
+        setLogsOpen(true);
         setTimeout(fetchRuns, 1000);
-        setTimeout(fetchRuns, 5000);
-        setTimeout(fetchRuns, 15000);
       } else {
         setDeployError(data.error ?? "Failed to start API tests");
       }
     } catch { setDeployError("Network error."); }
     setRunning(false);
+  };
+
+  const handleStop = async (runId: string) => {
+    try {
+      await fetch("/api/tests/stop", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ runId }),
+      });
+      await fetchRuns();
+    } catch { /* ignore */ }
+  };
+
+  const handleAiPlan = async () => {
+    if (!selectedSandbox) { setDeployError("Select a deployment first."); return; }
+    setDeployError(null);
+    setPlanLoading(true);
+    setPlan(null);
+    try {
+      const res = await fetch("/api/tests/ai-plan", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sandboxId: selectedSandbox }),
+      });
+      const data = await res.json();
+      if (data.ok) { setPlan(data.plan); setPlanOpen(true); }
+      else setDeployError(data.error ?? "AI plan failed");
+    } catch { setDeployError("Network error."); }
+    setPlanLoading(false);
   };
 
   const handleAnalyze = async (runId: string) => {
@@ -168,23 +272,26 @@ export default function Page() {
     } catch { /* ignore */ }
   };
 
-  useEffect(() => {
-    if (runs.some((r) => r.status === "running")) {
-      const interval = setInterval(fetchRuns, 5000);
-      return () => clearInterval(interval);
-    }
-  }, [runs, fetchRuns]);
-
   return (
     <div className="max-w-5xl mx-auto">
       {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-          <Zap className="w-6 h-6" /> API Testing
-        </h1>
-        <p className="text-sm text-gray-500 dark:text-zinc-400 mt-1">
-          Discover and validate API endpoints with multiple HTTP methods
-        </p>
+      <div className="mb-6 flex items-start justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+            <Zap className="w-6 h-6" /> API Testing
+          </h1>
+          <p className="text-sm text-gray-500 dark:text-zinc-400 mt-1">
+            Discover and validate API endpoints with live logs &amp; AI security planning
+          </p>
+        </div>
+        <button
+          onClick={handleAiPlan}
+          disabled={planLoading || !selectedSandbox}
+          className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-purple-600 hover:bg-purple-700 rounded-lg transition-colors disabled:opacity-60"
+        >
+          {planLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <BotMessageSquare className="w-4 h-4" />}
+          AI Security Plan
+        </button>
       </div>
 
       {/* Deployment selector card */}
@@ -261,6 +368,65 @@ export default function Page() {
         )}
       </div>
 
+      {/* Live Log Terminal */}
+      {liveRunId && (
+        <div className="mb-6 rounded-xl border border-zinc-700 bg-zinc-950 overflow-hidden">
+          <button
+            onClick={() => setLogsOpen((v) => !v)}
+            className="w-full flex items-center gap-2 px-4 py-2.5 text-xs font-mono text-zinc-300 bg-zinc-900 hover:bg-zinc-800 transition-colors border-b border-zinc-700"
+          >
+            <Terminal className="w-3.5 h-3.5 text-green-400" />
+            <span className="text-green-400 font-semibold">LIVE LOGS</span>
+            <span className="text-zinc-500 ml-1 font-mono truncate max-w-xs">{liveRunId}</span>
+            <span className="ml-auto text-zinc-500">{logs.length} lines</span>
+            {logsOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+          </button>
+          {logsOpen && (
+            <div className="p-4 max-h-72 overflow-y-auto font-mono text-xs leading-5 space-y-0.5">
+              {logs.length === 0 && (
+                <p className="text-zinc-500 animate-pulse">Waiting for logs…</p>
+              )}
+              {logs.map((l) => (
+                <p key={l.id} className={LOG_COLOR[l.level] ?? "text-zinc-300"}>
+                  <span className="text-zinc-600 select-none">[{new Date(l.created_at).toLocaleTimeString()}] </span>
+                  <span className="text-zinc-500 uppercase text-[10px] mr-1">{l.level.slice(0, 4)}</span>
+                  {l.message}
+                </p>
+              ))}
+              <div ref={logsEndRef} />
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* AI Security Plan Panel */}
+      {plan && planOpen && (
+        <div className="mb-6 rounded-xl border border-purple-300 dark:border-purple-500/40 bg-purple-50 dark:bg-purple-500/5 overflow-hidden">
+          <div className="flex items-center gap-2 px-4 py-3 border-b border-purple-200 dark:border-purple-500/30">
+            <BotMessageSquare className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+            <h3 className="text-sm font-semibold text-purple-700 dark:text-purple-400">AI Security Test Plan</h3>
+            <button onClick={() => setPlanOpen(false)} className="ml-auto text-xs text-purple-500 hover:text-purple-700">Dismiss</button>
+          </div>
+          <div className="p-4 max-h-96 overflow-y-auto">
+            <pre className="text-xs text-gray-700 dark:text-zinc-300 whitespace-pre-wrap font-mono leading-5">
+              {JSON.stringify(plan, null, 2)}
+            </pre>
+          </div>
+        </div>
+      )}
+
+      {/* History header */}
+      {runs.length > 0 && (
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="text-sm font-semibold text-gray-700 dark:text-zinc-300 uppercase tracking-wide">
+            History
+            <span className="ml-2 px-2 py-0.5 text-xs font-medium bg-gray-100 dark:bg-zinc-800 text-gray-500 dark:text-zinc-400 rounded-full">
+              {runs.length} run{runs.length !== 1 ? "s" : ""}
+            </span>
+          </h2>
+        </div>
+      )}
+
       {/* Runs list */}
       <div className="space-y-3 mb-8">
         {runs.length === 0 && !loading && (
@@ -293,11 +459,27 @@ export default function Page() {
                     API Test — {new Date(run.createdAt).toLocaleString()}
                   </p>
                   <p className="text-xs text-gray-500 dark:text-zinc-400 mt-0.5">
-                    {run.summary ?? (run.status === "running" ? "Testing…" : "No summary")}
+                    {run.summary ?? (run.status === "running" ? "Testing… (check live logs above)" : "No summary")}
                   </p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
+                {run.status === "running" && (
+                  <>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setLiveRunId(run.id); setLogsOpen(true); }}
+                      className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/30 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-500/20 transition-colors"
+                    >
+                      <Terminal className="w-3 h-3" /> Logs
+                    </button>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleStop(run.id); }}
+                      className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/30 rounded-lg hover:bg-red-100 dark:hover:bg-red-500/20 transition-colors"
+                    >
+                      <Square className="w-3 h-3 fill-current" /> Stop
+                    </button>
+                  </>
+                )}
                 {run.status === "completed" && (
                   <>
                     <button
@@ -341,9 +523,14 @@ export default function Page() {
       {/* Results table */}
       {selectedRun && results.length > 0 && (
         <div className="rounded-xl border border-gray-200 dark:border-zinc-800 overflow-hidden">
+          <div className="px-4 py-3 border-b border-gray-100 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-800/60 flex items-center gap-2">
+            <Zap className="w-4 h-4 text-blue-500" />
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Test Results</h3>
+            <span className="ml-auto text-xs text-gray-500 dark:text-zinc-400">{results.length} requests</span>
+          </div>
           <table className="w-full text-sm">
             <thead>
-              <tr className="bg-gray-50 dark:bg-zinc-800/60 border-b border-gray-200 dark:border-zinc-800">
+              <tr className="bg-gray-50 dark:bg-zinc-800/40 border-b border-gray-200 dark:border-zinc-800">
                 <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 dark:text-zinc-400 uppercase">Endpoint</th>
                 <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 dark:text-zinc-400 uppercase">Method</th>
                 <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 dark:text-zinc-400 uppercase">Status</th>

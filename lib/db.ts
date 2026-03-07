@@ -200,5 +200,37 @@ export async function ensureTables(): Promise<void> {
     )
   `;
 
+  // Per-run log lines (live logs for all test types)
+  await sql`
+    CREATE TABLE IF NOT EXISTS run_logs (
+      id         BIGSERIAL PRIMARY KEY,
+      run_id     TEXT      NOT NULL,
+      level      TEXT      NOT NULL DEFAULT 'info',
+      message    TEXT      NOT NULL,
+      created_at BIGINT    NOT NULL
+    )
+  `;
+  await sql`
+    CREATE INDEX IF NOT EXISTS idx_run_logs_run_id ON run_logs (run_id, id)
+  `;
+
   tablesReady = true;
+}
+
+/**
+ * Write a single log line for a test run.
+ * Non-blocking — failures are silently ignored so they never break the test flow.
+ */
+export async function logRun(
+  runId: string,
+  message: string,
+  level: "info" | "warn" | "error" | "success" = "info"
+): Promise<void> {
+  try {
+    const sql = getDb();
+    await sql`
+      INSERT INTO run_logs (run_id, level, message, created_at)
+      VALUES (${runId}, ${level}, ${message}, ${Date.now()})
+    `;
+  } catch { /* ignore — logs are best-effort */ }
 }

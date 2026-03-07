@@ -60,5 +60,82 @@ export async function ensureTables(): Promise<void> {
     )
   `;
 
+  // ── Testing tables ────────────────────────────────────────────────────────
+
+  // Test runs — one per triggered test batch
+  await sql`
+    CREATE TABLE IF NOT EXISTS test_runs (
+      id          TEXT PRIMARY KEY,
+      sandbox_id  TEXT NOT NULL,
+      type        TEXT NOT NULL,
+      status      TEXT NOT NULL DEFAULT 'running',
+      created_at  BIGINT NOT NULL,
+      finished_at BIGINT,
+      summary     TEXT
+    )
+  `;
+
+  // Route health-check results
+  await sql`
+    CREATE TABLE IF NOT EXISTS test_results (
+      id            BIGSERIAL PRIMARY KEY,
+      run_id        TEXT NOT NULL,
+      sandbox_id    TEXT NOT NULL,
+      route         TEXT NOT NULL,
+      status        TEXT NOT NULL,
+      status_code   INT,
+      response_time INT,
+      error         TEXT,
+      created_at    BIGINT NOT NULL
+    )
+  `;
+
+  // Security scan results
+  await sql`
+    CREATE TABLE IF NOT EXISTS security_results (
+      id          BIGSERIAL PRIMARY KEY,
+      run_id      TEXT NOT NULL,
+      sandbox_id  TEXT NOT NULL,
+      route       TEXT NOT NULL,
+      check_type  TEXT NOT NULL,
+      result      TEXT NOT NULL,
+      details     TEXT,
+      severity    TEXT NOT NULL DEFAULT 'info',
+      created_at  BIGINT NOT NULL
+    )
+  `;
+
+  // API test results
+  await sql`
+    CREATE TABLE IF NOT EXISTS api_test_results (
+      id            BIGSERIAL PRIMARY KEY,
+      run_id        TEXT NOT NULL,
+      sandbox_id    TEXT NOT NULL,
+      endpoint      TEXT NOT NULL,
+      method        TEXT NOT NULL,
+      status        TEXT NOT NULL,
+      status_code   INT,
+      latency       INT,
+      response_body TEXT,
+      created_at    BIGINT NOT NULL
+    )
+  `;
+
+  // Performance test results
+  await sql`
+    CREATE TABLE IF NOT EXISTS performance_results (
+      id                  BIGSERIAL PRIMARY KEY,
+      run_id              TEXT NOT NULL,
+      sandbox_id          TEXT NOT NULL,
+      route               TEXT NOT NULL,
+      avg_response        INT,
+      max_response        INT,
+      min_response        INT,
+      concurrent_requests INT,
+      success_rate        REAL,
+      created_at          BIGINT NOT NULL
+    )
+  `;
+
   tablesReady = true;
 }

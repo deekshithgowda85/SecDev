@@ -16,7 +16,7 @@ export function getDb() {
 let tablesReady = false;
 
 // Bump this version whenever schema migrations are added so ensureTables() re-runs
-const SCHEMA_VERSION = 2;
+const SCHEMA_VERSION = 3;
 
 export async function ensureTables(): Promise<void> {
   if (tablesReady) return;
@@ -159,6 +159,44 @@ export async function ensureTables(): Promise<void> {
       detail      TEXT,
       url         TEXT,
       created_at  BIGINT    NOT NULL
+    )
+  `;
+
+  // ── Security Agent tables ─────────────────────────────────────────────
+
+  // Full security agent scan runs
+  await sql`
+    CREATE TABLE IF NOT EXISTS security_agent_runs (
+      id          TEXT PRIMARY KEY,
+      sandbox_id  TEXT NOT NULL,
+      user_id     TEXT NOT NULL DEFAULT '',
+      status      TEXT NOT NULL DEFAULT 'running',
+      created_at  BIGINT NOT NULL,
+      finished_at BIGINT,
+      total_routes INT DEFAULT 0,
+      overall_score INT,
+      critical_count INT DEFAULT 0,
+      high_count     INT DEFAULT 0,
+      medium_count   INT DEFAULT 0,
+      low_count      INT DEFAULT 0,
+      summary     TEXT,
+      ai_analysis TEXT
+    )
+  `;
+
+  // Individual security agent findings
+  await sql`
+    CREATE TABLE IF NOT EXISTS security_agent_findings (
+      id          BIGSERIAL PRIMARY KEY,
+      run_id      TEXT NOT NULL,
+      sandbox_id  TEXT NOT NULL,
+      route       TEXT NOT NULL,
+      check_type  TEXT NOT NULL,
+      result      TEXT NOT NULL,
+      severity    TEXT NOT NULL DEFAULT 'info',
+      details     TEXT,
+      payload     TEXT,
+      created_at  BIGINT NOT NULL
     )
   `;
 

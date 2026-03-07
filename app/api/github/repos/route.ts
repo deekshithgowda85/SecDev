@@ -45,6 +45,7 @@ export async function GET() {
 
   const raw = await res.json();
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const repos: GitHubRepo[] = raw.map((r: any) => ({
     id: r.id,
     name: r.name,

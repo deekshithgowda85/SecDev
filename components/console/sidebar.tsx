@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard, Rocket, FolderGit2, Github, KeyRound, Terminal,
-  TestTube2, Shield, Zap, BarChart3, Box, Settings, CreditCard, User,
+  TestTube2, Shield, ShieldAlert, Zap, BarChart3, Box, Settings, CreditCard, User,
   ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Database, Globe,
 } from "lucide-react";
 
@@ -32,6 +32,7 @@ const navGroups: NavGroup[] = [
     items: [
       { label: "Test Suite", href: "/console/testing", icon: TestTube2 },
       { label: "Security Scans", href: "/console/security", icon: Shield },
+      { label: "Security Agent", href: "/console/security-agent", icon: ShieldAlert },
       { label: "API Testing", href: "/console/api-testing", icon: Zap },
       { label: "Performance", href: "/console/performance", icon: BarChart3 },
       { label: "Vibetest", href: "/console/vibetest", icon: Globe },

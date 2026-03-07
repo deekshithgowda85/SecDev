@@ -22,8 +22,8 @@ export default function RegisterPage() {
     try {
       await signUpWithEmail(email, password);
       router.push("/");
-    } catch (err: any) {
-      setError(err?.message || "Registration failed");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Registration failed");
     } finally {
       setLoading(false);
     }
@@ -158,7 +158,7 @@ export default function RegisterPage() {
             </div>
           </div>
           <p className="text-sm text-zinc-300 leading-relaxed">
-            "Set up in under 2 minutes. SecDev caught a critical bug before it ever hit production."
+            &quot;Set up in under 2 minutes. SecDev caught a critical bug before it ever hit production.&quot;
           </p>
         </div>
       </div>

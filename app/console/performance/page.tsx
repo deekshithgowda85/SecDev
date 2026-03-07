@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import {
   BarChart3, Play, RefreshCw, CheckCircle2, XCircle,
-  Sparkles, Loader2, TrendingUp, TrendingDown, Activity, ExternalLink, Download,
+  Sparkles, Loader2, TrendingUp, TrendingDown, Activity, ExternalLink, Download, Square,
 } from "lucide-react";
 
 const DEPLOY_STATUS_BADGE: Record<string, string> = {
@@ -144,6 +144,17 @@ export default function Page() {
       if (data.ok) setAnalysis(data.analysis);
     } catch { /* ignore */ }
     setAnalyzing(false);
+  };
+
+  const handleStop = async (runId: string) => {
+    try {
+      await fetch("/api/tests/stop", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ runId }),
+      });
+      await fetchRuns();
+    } catch { /* ignore */ }
   };
 
   const handleDownload = async (runId: string) => {
@@ -292,6 +303,18 @@ export default function Page() {
         </div>
       )}
 
+      {/* History header */}
+      {runs.length > 0 && (
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="text-sm font-semibold text-gray-700 dark:text-zinc-300 uppercase tracking-wide">
+            History
+            <span className="ml-2 px-2 py-0.5 text-xs font-medium bg-gray-100 dark:bg-zinc-800 text-gray-500 dark:text-zinc-400 rounded-full">
+              {runs.length} run{runs.length !== 1 ? "s" : ""}
+            </span>
+          </h2>
+        </div>
+      )}
+
       {/* Runs list */}
       <div className="space-y-3 mb-8">
         {runs.length === 0 && !loading && (
@@ -329,6 +352,14 @@ export default function Page() {
                 </div>
               </div>
               <div className="flex items-center gap-2">
+                {run.status === "running" && (
+                  <button
+                    onClick={(e) => { e.stopPropagation(); handleStop(run.id); }}
+                    className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/30 rounded-lg hover:bg-red-100 dark:hover:bg-red-500/20 transition-colors"
+                  >
+                    <Square className="w-3 h-3 fill-current" /> Stop
+                  </button>
+                )}
                 {run.status === "completed" && (
                   <>
                     <button

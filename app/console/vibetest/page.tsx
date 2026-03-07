@@ -305,6 +305,18 @@ export default function Page() {
         </div>
       )}
 
+      {/* History header */}
+      {runs.length > 0 && (
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="text-sm font-semibold text-gray-700 dark:text-zinc-300 uppercase tracking-wide">
+            History
+            <span className="ml-2 px-2 py-0.5 text-xs font-medium bg-gray-100 dark:bg-zinc-800 text-gray-500 dark:text-zinc-400 rounded-full">
+              {runs.length} run{runs.length !== 1 ? "s" : ""}
+            </span>
+          </h2>
+        </div>
+      )}
+
       {/* Runs list */}
       <div className="space-y-3 mb-8">
         {runs.length === 0 && !loading && (

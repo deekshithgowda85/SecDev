@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { CreditCard, Zap, Box, Check, AlertTriangle } from "lucide-react";
+import { CreditCard, Check, AlertTriangle } from "lucide-react";
 
 const PLANS = [
   {

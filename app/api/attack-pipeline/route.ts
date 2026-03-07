@@ -164,5 +164,56 @@ export async function GET(request: Request) {
         LIMIT 30
       `;
 
-  return NextResponse.json({ ok: true, runs: rows });
+  // Map snake_case DB columns to camelCase and coerce BIGINT strings to numbers
+  const runs = rows.map((r) => ({
+    id: r.id,
+    baseUrl: r.base_url,
+    sandboxId: r.sandbox_id,
+    status: r.status,
+    createdAt: Number(r.created_at),
+    finishedAt: r.finished_at != null ? Number(r.finished_at) : null,
+    routesFound: r.routes_found,
+    overallScore: r.overall_score,
+    riskLevel: r.risk_level,
+    criticalCount: r.critical_count,
+    highCount: r.high_count,
+    mediumCount: r.medium_count,
+    lowCount: r.low_count,
+    passedCount: r.passed_count,
+    summary: r.summary,
+  }));
+
+  return NextResponse.json({ ok: true, runs });
+}
+
+// ── PATCH — mark a run as stopped ────────────────────────────────────────────
+export async function PATCH(request: Request) {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
+  }
+  const userId = session.user.id;
+
+  let body: { runId?: string };
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ ok: false, error: "Invalid JSON body" }, { status: 400 });
+  }
+
+  const { runId } = body;
+  if (!runId) {
+    return NextResponse.json({ ok: false, error: "runId is required" }, { status: 400 });
+  }
+
+  await ensureTables();
+  const sql = getDb();
+
+  await sql`
+    UPDATE attack_pipeline_runs
+    SET status = 'stopped', finished_at = ${Date.now()}
+    WHERE id = ${runId} AND user_id = ${userId} AND status = 'running'
+  `;
+
+  return NextResponse.json({ ok: true });
 }

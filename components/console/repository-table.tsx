@@ -1,4 +1,4 @@
-import { Lock, Unlock, ExternalLink, Rocket, GitFork } from "lucide-react";
+import { Lock, Unlock, ExternalLink, Rocket } from "lucide-react";
 import type { GitHubRepo } from "./repository-card";
 import { timeAgo } from "./repository-card";
 

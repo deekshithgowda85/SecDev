@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import Link from "next/link";
 import {
-  Swords, Play, RefreshCw, CheckCircle2, XCircle, AlertTriangle,
+  Swords, Play, Square, RefreshCw, CheckCircle2, XCircle, AlertTriangle,
   Loader2, ExternalLink, ChevronDown, ChevronUp, Terminal,
   ShieldAlert, Activity, Sparkles, Copy, Check, Info,
 } from "lucide-react";
@@ -236,10 +236,12 @@ export default function AttackPipelinePage() {
   const [report, setReport] = useState<Report | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [runs, setRuns] = useState<RunMeta[]>([]);
-  const [runsLoading, setRunsLoading] = useState(false);
+  const [runsLoading, setRunsLoading] = useState(true);
   const [expandedAgents, setExpandedAgents] = useState<Set<string>>(new Set(["sql-injection", "auth-bypass"]));
   const [activeTab, setActiveTab] = useState<"findings" | "vibetest" | "coverage" | "performance">("findings");
   const logsEndRef = useRef<HTMLDivElement>(null);
+  const abortRef = useRef<AbortController | null>(null);
+  const currentRunIdRef = useRef<string | null>(null);
 
   const selectedDeployment = deployments.find((d) => d.sandboxId === selectedSandbox);
   const targetUrl = useCustomUrl ? customUrl.trim() : (selectedDeployment?.publicUrl ?? "");
@@ -258,7 +260,7 @@ export default function AttackPipelinePage() {
       .catch(() => null);
   }, []);
 
-  // Load run history
+  // Load run history (used for manual refresh buttons and post-scan callbacks)
   const fetchRuns = useCallback(async () => {
     setRunsLoading(true);
     try {
@@ -269,7 +271,16 @@ export default function AttackPipelinePage() {
     setRunsLoading(false);
   }, []);
 
-  useEffect(() => { fetchRuns(); }, [fetchRuns]);
+  // Initial load — use Promise callbacks so setState is never called synchronously in the effect body
+  useEffect(() => {
+    let active = true;
+    fetch("/api/attack-pipeline")
+      .then((r) => r.json())
+      .then((data) => { if (active && data.ok) setRuns(data.runs ?? []); })
+      .catch(() => null)
+      .finally(() => { if (active) setRunsLoading(false); });
+    return () => { active = false; };
+  }, []);
 
   // Auto-scroll logs
   useEffect(() => {
@@ -288,6 +299,22 @@ export default function AttackPipelinePage() {
     } catch { /* ignore */ }
   };
 
+  const handleStop = async () => {
+    abortRef.current?.abort();
+    setLogs((prev) => [...prev, "⚠ Scan stopped by user."]);
+    setScanning(false);
+    const runId = currentRunIdRef.current;
+    if (runId) {
+      await fetch("/api/attack-pipeline", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ runId }),
+      }).catch(() => null);
+      currentRunIdRef.current = null;
+      fetchRuns();
+    }
+  };
+
   const handleRun = async () => {
     if (!targetUrl) { setError("Enter a target URL or select a deployment."); return; }
     if (!targetUrl.startsWith("http")) { setError("URL must start with http:// or https://"); return; }
@@ -295,11 +322,14 @@ export default function AttackPipelinePage() {
     setReport(null);
     setLogs([]);
     setScanning(true);
+    currentRunIdRef.current = null;
+    abortRef.current = new AbortController();
 
     try {
       const res = await fetch("/api/attack-pipeline", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        signal: abortRef.current.signal,
         body: JSON.stringify({
           baseUrl: targetUrl,
           sandboxId: useCustomUrl ? undefined : selectedSandbox || undefined,
@@ -331,7 +361,9 @@ export default function AttackPipelinePage() {
             const ev = JSON.parse(part.slice(6)) as {
               type: string; msg?: string; report?: Report; error?: string; runId?: string;
             };
-            if (ev.type === "progress" && ev.msg) {
+            if (ev.type === "start" && ev.runId) {
+              currentRunIdRef.current = ev.runId;
+            } else if (ev.type === "progress" && ev.msg) {
               setLogs((prev) => [...prev, ev.msg!]);
             } else if (ev.type === "complete" && ev.report) {
               setReport(ev.report);
@@ -346,7 +378,11 @@ export default function AttackPipelinePage() {
         }
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Network error");
+      if (err instanceof Error && err.name === "AbortError") {
+        // Stopped by user — already handled in handleStop
+      } else {
+        setError(err instanceof Error ? err.message : "Network error");
+      }
     }
     setScanning(false);
   };
@@ -453,14 +489,24 @@ export default function AttackPipelinePage() {
 
           <div className="flex-1" />
 
-          <button
-            onClick={handleRun}
-            disabled={scanning || !targetUrl}
-            className="flex items-center gap-2 px-5 py-2 text-sm font-semibold text-white bg-red-600 hover:bg-red-700 disabled:opacity-50 rounded-lg transition-colors"
-          >
-            {scanning ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
-            {scanning ? "Scanning…" : "Run Attack"}
-          </button>
+          {scanning ? (
+            <button
+              onClick={handleStop}
+              className="flex items-center gap-2 px-5 py-2 text-sm font-semibold text-white bg-zinc-700 hover:bg-zinc-600 rounded-lg transition-colors"
+            >
+              <Square className="w-4 h-4" />
+              Stop
+            </button>
+          ) : (
+            <button
+              onClick={handleRun}
+              disabled={!targetUrl}
+              className="flex items-center gap-2 px-5 py-2 text-sm font-semibold text-white bg-red-600 hover:bg-red-700 disabled:opacity-50 rounded-lg transition-colors"
+            >
+              <Play className="w-4 h-4" />
+              Run Attack
+            </button>
+          )}
 
           <button onClick={fetchRuns} disabled={runsLoading} title="Refresh history"
             className="flex items-center justify-center w-9 h-9 border border-gray-200 dark:border-zinc-700 rounded-lg hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors">
@@ -736,6 +782,7 @@ export default function AttackPipelinePage() {
                 <div className="flex items-center gap-3 min-w-0">
                   {run.status === "running" ? <Loader2 className="w-5 h-5 text-yellow-500 animate-spin shrink-0" />
                     : run.status === "completed" ? <CheckCircle2 className="w-5 h-5 text-green-500 shrink-0" />
+                    : run.status === "stopped" ? <Square className="w-5 h-5 text-zinc-400 shrink-0" />
                     : <XCircle className="w-5 h-5 text-red-500 shrink-0" />}
                   <div className="min-w-0">
                     <p className="font-medium text-sm text-gray-900 dark:text-white truncate">
@@ -761,6 +808,7 @@ export default function AttackPipelinePage() {
                   <span className={`px-2 py-1 text-xs font-medium rounded-md border ${
                     run.status === "running" ? "bg-yellow-50 text-yellow-700 border-yellow-200 dark:bg-yellow-500/10 dark:text-yellow-400 dark:border-yellow-500/20"
                       : run.status === "completed" ? "bg-green-50 text-green-700 border-green-200 dark:bg-green-500/10 dark:text-green-400 dark:border-green-500/20"
+                      : run.status === "stopped" ? "bg-zinc-100 text-zinc-600 border-zinc-300 dark:bg-zinc-800 dark:text-zinc-400 dark:border-zinc-700"
                       : "bg-red-50 text-red-700 border-red-200 dark:bg-red-500/10 dark:text-red-400 dark:border-red-500/20"
                   }`}>{run.status}</span>
                 </div>

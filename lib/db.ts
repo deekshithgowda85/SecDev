@@ -15,6 +15,9 @@ export function getDb() {
 
 let tablesReady = false;
 
+// Bump this version whenever schema migrations are added so ensureTables() re-runs
+const SCHEMA_VERSION = 2;
+
 export async function ensureTables(): Promise<void> {
   if (tablesReady) return;
   const sql = getDb();
@@ -29,9 +32,12 @@ export async function ensureTables(): Promise<void> {
       public_url  TEXT        NOT NULL,
       logs_url    TEXT        NOT NULL,
       status      TEXT        NOT NULL DEFAULT 'deploying',
-      started_at  BIGINT      NOT NULL
+      started_at  BIGINT      NOT NULL,
+      user_id     TEXT        NOT NULL DEFAULT ''
     )
   `;
+  // Migrate existing table: add user_id if missing
+  await sql`ALTER TABLE deployments ADD COLUMN IF NOT EXISTS user_id TEXT NOT NULL DEFAULT ''`;
 
   // Per-deployment log lines
   await sql`
@@ -71,9 +77,12 @@ export async function ensureTables(): Promise<void> {
       status      TEXT NOT NULL DEFAULT 'running',
       created_at  BIGINT NOT NULL,
       finished_at BIGINT,
-      summary     TEXT
+      summary     TEXT,
+      user_id     TEXT NOT NULL DEFAULT ''
     )
   `;
+  // Migrate existing table: add user_id if missing
+  await sql`ALTER TABLE test_runs ADD COLUMN IF NOT EXISTS user_id TEXT NOT NULL DEFAULT ''`;
 
   // Route health-check results
   await sql`

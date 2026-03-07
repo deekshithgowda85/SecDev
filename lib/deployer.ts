@@ -22,6 +22,7 @@ export interface DeploymentRecord {
   logsUrl: string;
   status: "deploying" | "live" | "failed";
   startedAt: number;
+  userId: string;
   /** Full log lines — populated by getDeployment(), empty in getAllDeployments() */
   logs: LogLine[];
   /** Pre-calculated count — populated by getAllDeployments(), undefined in getDeployment() */
@@ -34,6 +35,7 @@ export interface DeploymentResult {
   logsUrl: string;
   sandboxId: string;
   status: string;
+  existing?: boolean;
 }
 
 // ── DB-backed store accessors ──────────────────────────────────────────────────
@@ -59,6 +61,7 @@ export async function getDeployment(id: string): Promise<DeploymentRecord | null
     logsUrl: row.logs_url as string,
     status: row.status as DeploymentRecord["status"],
     startedAt: Number(row.started_at),
+    userId: (row.user_id as string) ?? "",
     logs: logRows.map((r) => ({
       ts: Number(r.ts),
       level: r.level as LogLine["level"],
@@ -67,8 +70,8 @@ export async function getDeployment(id: string): Promise<DeploymentRecord | null
   };
 }
 
-/** Fetch all deployments (no logs, but includes logCount). Newest first. */
-export async function getAllDeployments(): Promise<DeploymentRecord[]> {
+/** Fetch all deployments for a given user (no logs, includes logCount). Newest first. */
+export async function getAllDeployments(userId: string): Promise<DeploymentRecord[]> {
   await ensureTables();
   const sql = getDb();
   const rows = await sql`
@@ -77,6 +80,7 @@ export async function getAllDeployments(): Promise<DeploymentRecord[]> {
       COUNT(l.id)::int AS log_count
     FROM deployments d
     LEFT JOIN deployment_logs l ON l.sandbox_id = d.sandbox_id
+    WHERE d.user_id = ${userId}
     GROUP BY d.sandbox_id
     ORDER BY d.started_at DESC
   `;
@@ -89,12 +93,13 @@ export async function getAllDeployments(): Promise<DeploymentRecord[]> {
     logsUrl: row.logs_url as string,
     status: row.status as DeploymentRecord["status"],
     startedAt: Number(row.started_at),
+    userId: (row.user_id as string) ?? "",
     logs: [],
     logCount: Number(row.log_count),
   }));
 }
 
-/** Delete a deployment record and all its logs from the database. */
+/** Delete a deployment record and all its logs from the database (ownership checked by caller). */
 export async function deleteDeployment(id: string): Promise<void> {
   await ensureTables();
   const sql = getDb();
@@ -110,6 +115,7 @@ export async function startDeployment(
     branch?: string;
     envVars?: Record<string, string>;
     repoName?: string;
+    userId?: string;
   }
 ): Promise<DeploymentResult> {
   const branch = options?.branch ?? "main";
@@ -117,6 +123,33 @@ export async function startDeployment(
     options?.repoName ??
     repoUrl.split("/").pop()?.replace(/\.git$/, "") ??
     "app";
+  const userId = options?.userId ?? "";
+
+  // Check for existing active deployment of the same repo+branch for this user
+  if (userId) {
+    await ensureTables();
+    const sqlCheck = getDb();
+    const existing = await sqlCheck`
+      SELECT sandbox_id FROM deployments
+      WHERE user_id = ${userId} AND repo_url = ${repoUrl} AND branch = ${branch}
+        AND status != 'failed'
+      LIMIT 1
+    `;
+    if (existing.length > 0) {
+      // Return the existing deployment rather than spinning up a duplicate
+      const record = await getDeployment(existing[0].sandbox_id as string);
+      if (record) {
+        return {
+          id: record.sandboxId,
+          publicUrl: record.publicUrl,
+          logsUrl: record.logsUrl,
+          sandboxId: record.sandboxId,
+          status: record.status,
+          existing: true,
+        };
+      }
+    }
+  }
 
   // Create the sandbox (takes ~3s). We await this so we can return a real URL immediately.
   const sandbox = await Sandbox.create(E2B_TEMPLATE, {
@@ -138,8 +171,8 @@ export async function startDeployment(
   await ensureTables();
   const sql = getDb();
   await sql`
-    INSERT INTO deployments (sandbox_id, repo_url, repo_name, branch, public_url, logs_url, status, started_at)
-    VALUES (${sandboxId}, ${repoUrl}, ${repoName}, ${branch}, ${publicUrl}, ${logsUrl}, 'deploying', ${Date.now()})
+    INSERT INTO deployments (sandbox_id, repo_url, repo_name, branch, public_url, logs_url, status, started_at, user_id)
+    VALUES (${sandboxId}, ${repoUrl}, ${repoName}, ${branch}, ${publicUrl}, ${logsUrl}, 'deploying', ${Date.now()}, ${userId})
     ON CONFLICT (sandbox_id) DO NOTHING
   `;
 

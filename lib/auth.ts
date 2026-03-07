@@ -27,6 +27,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
     async session({ session, token }) {
       session.accessToken = token.accessToken as string | undefined;
+      // Expose stable user ID (GitHub provider sets sub = GitHub user numeric ID)
+      if (token.sub) session.user.id = token.sub;
       return session;
     },
   },

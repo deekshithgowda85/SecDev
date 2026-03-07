@@ -7,10 +7,18 @@ import { getDeployment } from "@/lib/deployer";
 // Playwright agent scripts — run inside E2B sandbox targeting localhost:3000
 // Each script outputs one JSON line to stdout:
 //   { agent: 'links', results: [...] }  |  { agent: 'a11y', issues: [...] }
+// Tries /opt/playwright (pre-baked in template) first, falls back to /tmp/vt
 // ---------------------------------------------------------------------------
 
+const PW_RESOLVE = `
+var pw;
+try { require.resolve('/opt/playwright/node_modules/playwright'); pw='/opt/playwright/node_modules/playwright'; }
+catch(_) { pw='/tmp/vt/node_modules/playwright'; }
+var chromium = require(pw).chromium;
+`.trim();
+
 const LINK_SCRIPT = `
-const { chromium } = require('/tmp/vt/node_modules/playwright');
+${PW_RESOLVE}
 (async () => {
   const BASE = process.argv[2] || 'http://localhost:3000';
   const browser = await chromium.launch({ args: ['--no-sandbox','--disable-setuid-sandbox','--disable-dev-shm-usage'] });
@@ -48,7 +56,7 @@ const { chromium } = require('/tmp/vt/node_modules/playwright');
 `.trim();
 
 const CONSOLE_SCRIPT = `
-const { chromium } = require('/tmp/vt/node_modules/playwright');
+${PW_RESOLVE}
 (async () => {
   const BASE = process.argv[2] || 'http://localhost:3000';
   const browser = await chromium.launch({ args: ['--no-sandbox','--disable-setuid-sandbox','--disable-dev-shm-usage'] });
@@ -72,7 +80,7 @@ const { chromium } = require('/tmp/vt/node_modules/playwright');
 `.trim();
 
 const A11Y_SCRIPT = `
-const { chromium } = require('/tmp/vt/node_modules/playwright');
+${PW_RESOLVE}
 (async () => {
   const BASE = process.argv[2] || 'http://localhost:3000';
   const browser = await chromium.launch({ args: ['--no-sandbox','--disable-setuid-sandbox','--disable-dev-shm-usage'] });
@@ -123,7 +131,7 @@ const { chromium } = require('/tmp/vt/node_modules/playwright');
 `.trim();
 
 const UI_SCRIPT = `
-const { chromium } = require('/tmp/vt/node_modules/playwright');
+${PW_RESOLVE}
 (async () => {
   const BASE = process.argv[2] || 'http://localhost:3000';
   const browser = await chromium.launch({ args: ['--no-sandbox','--disable-setuid-sandbox','--disable-dev-shm-usage'] });
@@ -210,13 +218,22 @@ export const runVibetest = inngest.createFunction(
       return { ok: false, reason: "deployment not found" };
     }
 
-    // 3. Install Playwright inside the deployed E2B sandbox
+    // 3. Install Playwright inside the deployed E2B sandbox (skip if pre-baked)
     const installResult = await step.run("setup-playwright", async () => {
       let sandbox: Sandbox | null = null;
       try {
         sandbox = await Sandbox.connect(sandboxId, {
           apiKey: process.env.E2B_API_KEY!,
         });
+        // Check if Playwright is already pre-installed in the template image
+        const check = await sandbox.commands.run(
+          "test -d /opt/playwright/node_modules/playwright && echo PREINSTALLED || echo MISSING",
+          { timeoutMs: 10_000 }
+        );
+        if (check.stdout.includes("PREINSTALLED")) {
+          return { exitCode: 0, ok: true, preinstalled: true };
+        }
+        // Fall back: install into /tmp/vt/ (older template without pre-baked Playwright)
         const res = await sandbox.commands.run(
           "mkdir -p /tmp/vt && cd /tmp/vt && npm install playwright@latest 2>&1 && /tmp/vt/node_modules/.bin/playwright install chromium --with-deps 2>&1",
           { timeoutMs: 6 * 60 * 1000 }

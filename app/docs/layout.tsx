@@ -17,44 +17,6 @@ const docSections = [
       { label: "Quick Start", href: "/docs/quick-start", icon: Rocket },
     ],
   },
-  {
-    title: "Integrations",
-    items: [
-      { label: "GitHub Integration", href: "/docs/github", icon: GitBranch },
-      { label: "Neon PostgreSQL", href: "/docs/neon", icon: Database },
-      { label: "Environment Variables", href: "/docs/env-vars", icon: KeyRound },
-    ],
-  },
-  {
-    title: "Deployments",
-    items: [
-      { label: "E2B Sandboxes", href: "/docs/sandboxes", icon: Box },
-      { label: "Inngest Workflows", href: "/docs/workflows", icon: Zap },
-      { label: "Deployment Logs", href: "/docs/logs", icon: Terminal },
-    ],
-  },
-  {
-    title: "Testing & QA",
-    items: [
-      { label: "Automated Test Suite", href: "/docs/testing", icon: TestTube2 },
-      { label: "API Testing", href: "/docs/api-testing", icon: Zap },
-      { label: "Performance Tests", href: "/docs/performance", icon: BarChart3 },
-    ],
-  },
-  {
-    title: "Security",
-    items: [
-      { label: "Security Scans", href: "/docs/security", icon: Shield },
-      { label: "Isolated Environments", href: "/docs/isolation", icon: Lock },
-    ],
-  },
-  {
-    title: "Observability",
-    items: [
-      { label: "Real-time Logs", href: "/docs/realtime-logs", icon: Terminal },
-      { label: "Metrics & Analytics", href: "/docs/metrics", icon: BarChart3 },
-    ],
-  },
 ];
 
 function DocsSidebar({ onClose }: { onClose?: () => void }) {

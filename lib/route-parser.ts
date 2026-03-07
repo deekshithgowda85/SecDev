@@ -24,20 +24,32 @@ export interface ParsedRoutes {
  * Connect to a live sandbox and discover all routes.
  */
 export async function parseRoutes(sandboxId: string): Promise<ParsedRoutes> {
-  const sandbox = await Sandbox.connect(sandboxId, {
-    apiKey: process.env.E2B_API_KEY,
-  });
+  try {
+    const sandbox = await Sandbox.connect(sandboxId, {
+      apiKey: process.env.E2B_API_KEY,
+    });
 
-  // Detect framework by checking for characteristic directories/files
-  const detect = await sandbox.commands.run(
-    `ls ${PROJECT_ROOT}/app 2>/dev/null && echo HAS_APP; ` +
-    `ls ${PROJECT_ROOT}/pages 2>/dev/null && echo HAS_PAGES; ` +
-    `ls ${PROJECT_ROOT}/src 2>/dev/null && echo HAS_SRC; ` +
-    `ls ${PROJECT_ROOT}/public 2>/dev/null && echo HAS_PUBLIC; ` +
-    `ls ${PROJECT_ROOT}/*.html 2>/dev/null && echo HAS_HTML`,
-    { timeoutMs: 10_000 }
-  );
-  const out = detect.stdout;
+    // First check if PROJECT_ROOT exists
+    const rootCheck = await sandbox.commands.run(
+      `test -d ${PROJECT_ROOT} && echo EXISTS || echo MISSING`,
+      { timeoutMs: 5_000 }
+    );
+
+    if (!rootCheck.stdout.includes("EXISTS")) {
+      console.warn(`[parseRoutes] ${PROJECT_ROOT} not found in sandbox ${sandboxId}, returning fallback`);
+      return { routes: ["/"], framework: "unknown" };
+    }
+
+    // Detect framework by checking for characteristic directories/files
+    const detect = await sandbox.commands.run(
+      `ls ${PROJECT_ROOT}/app 2>/dev/null && echo HAS_APP; ` +
+      `ls ${PROJECT_ROOT}/pages 2>/dev/null && echo HAS_PAGES; ` +
+      `ls ${PROJECT_ROOT}/src 2>/dev/null && echo HAS_SRC; ` +
+      `ls ${PROJECT_ROOT}/public 2>/dev/null && echo HAS_PUBLIC; ` +
+      `ls ${PROJECT_ROOT}/*.html 2>/dev/null && echo HAS_HTML`,
+      { timeoutMs: 10_000 }
+    );
+    const out = detect.stdout;
 
   // ── Next.js App Router ──────────────────────────────────────────────────
   if (out.includes("HAS_APP")) {
@@ -112,51 +124,72 @@ export async function parseRoutes(sandboxId: string): Promise<ParsedRoutes> {
 
   // Fallback — just return root
   return { routes: ["/"], framework: "unknown" };
+  } catch (error) {
+    console.error(`[parseRoutes] Error parsing routes for sandbox ${sandboxId}:`, error);
+    // Return safe fallback instead of throwing
+    return { routes: ["/"], framework: "unknown" };
+  }
 }
 
 /**
  * Discover API routes from a Next.js project in the sandbox.
  */
 export async function parseApiRoutes(sandboxId: string): Promise<string[]> {
-  const sandbox = await Sandbox.connect(sandboxId, {
-    apiKey: process.env.E2B_API_KEY,
-  });
+  try {
+    const sandbox = await Sandbox.connect(sandboxId, {
+      apiKey: process.env.E2B_API_KEY,
+    });
 
-  // Next.js App Router API routes
-  const appApi = await sandbox.commands.run(
-    `find ${PROJECT_ROOT}/app -name 'route.ts' -o -name 'route.js' 2>/dev/null | sort`,
-    { timeoutMs: 15_000 }
-  );
-  if (appApi.stdout.trim()) {
-    return appApi.stdout
-      .trim()
-      .split("\n")
-      .filter(Boolean)
-      .map((f) => {
-        return f
-          .replace(`${PROJECT_ROOT}/app`, "")
-          .replace(/\/route\.(ts|js)$/, "")
-          .replace(/\/\([^)]+\)/g, "") || "/api";
-      });
+    // Check if PROJECT_ROOT exists first
+    const rootCheck = await sandbox.commands.run(
+      `test -d ${PROJECT_ROOT} && echo EXISTS || echo MISSING`,
+      { timeoutMs: 5_000 }
+    );
+
+    if (!rootCheck.stdout.includes("EXISTS")) {
+      console.warn(`[parseApiRoutes] ${PROJECT_ROOT} not found in sandbox ${sandboxId}`);
+      return [];
+    }
+
+    // Next.js App Router API routes
+    const appApi = await sandbox.commands.run(
+      `find ${PROJECT_ROOT}/app -name 'route.ts' -o -name 'route.js' 2>/dev/null | sort`,
+      { timeoutMs: 15_000 }
+    );
+    if (appApi.stdout.trim()) {
+      return appApi.stdout
+        .trim()
+        .split("\n")
+        .filter(Boolean)
+        .map((f) => {
+          return f
+            .replace(`${PROJECT_ROOT}/app`, "")
+            .replace(/\/route\.(ts|js)$/, "")
+            .replace(/\/\([^)]+\)/g, "") || "/api";
+        });
+    }
+
+    // Next.js Pages Router API routes
+    const pagesApi = await sandbox.commands.run(
+      `find ${PROJECT_ROOT}/pages/api -name '*.ts' -o -name '*.js' 2>/dev/null | sort`,
+      { timeoutMs: 15_000 }
+    );
+    if (pagesApi.stdout.trim()) {
+      return pagesApi.stdout
+        .trim()
+        .split("\n")
+        .filter(Boolean)
+        .map((f) => {
+          return f
+            .replace(`${PROJECT_ROOT}/pages`, "")
+            .replace(/\.(ts|js)$/, "")
+            .replace(/\/index$/, "");
+        });
+    }
+
+    return [];
+  } catch (error) {
+    console.error(`[parseApiRoutes] Error parsing API routes for sandbox ${sandboxId}:`, error);
+    return [];
   }
-
-  // Next.js Pages Router API routes
-  const pagesApi = await sandbox.commands.run(
-    `find ${PROJECT_ROOT}/pages/api -name '*.ts' -o -name '*.js' 2>/dev/null | sort`,
-    { timeoutMs: 15_000 }
-  );
-  if (pagesApi.stdout.trim()) {
-    return pagesApi.stdout
-      .trim()
-      .split("\n")
-      .filter(Boolean)
-      .map((f) => {
-        return f
-          .replace(`${PROJECT_ROOT}/pages`, "")
-          .replace(/\.(ts|js)$/, "")
-          .replace(/\/index$/, "");
-      });
-  }
-
-  return [];
 }

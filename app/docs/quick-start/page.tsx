@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, GitBranch, Rocket, Database, Terminal } from "lucide-react";
+import { GitBranch, Rocket, Database, Terminal } from "lucide-react";
 
 const steps = [
   {
@@ -7,28 +7,28 @@ const steps = [
     icon: GitBranch,
     title: "Connect your GitHub",
     description: "Sign in with GitHub and grant SecDev access to your repositories. Public and private repos are both supported.",
-    action: { label: "Go to GitHub integration", href: "/console/github" },
+    detail: "Navigate to Console → Settings → GitHub Integration. Click 'Connect GitHub' and authorize the OAuth app. You can grant access to all repositories or select specific ones. Fine-grained personal access tokens are supported for private repository access.",
   },
   {
     step: "02",
     icon: Database,
     title: "Provision a Neon database",
     description: "Optionally link a Neon PostgreSQL database. Each deployment gets an isolated database branch — no shared state, no conflicts.",
-    action: { label: "Set up Neon", href: "/console/neon" },
+    detail: "In Console → Settings → Database, click 'Add Neon Database' and paste your Neon connection string, or create a new project via the Neon dashboard. SecDev automatically branches your database for each deployment so every environment gets its own isolated schema — changes in one branch never affect another.",
   },
   {
     step: "03",
     icon: Rocket,
     title: "Deploy your project",
     description: "Pick a repository, choose a branch, and hit Deploy. SecDev spins up an E2B sandbox, installs dependencies, and runs your app.",
-    action: { label: "Open console", href: "/console/dashboard" },
+    detail: "Open the Console Dashboard and click 'New Deployment'. Paste your repository URL, select the target branch, and optionally add environment variables. SecDev auto-detects your framework (Next.js, React, Node.js, etc.), installs dependencies inside a Firecracker microVM sandbox, builds your project, and exposes it on a public preview URL — all within minutes.",
   },
   {
     step: "04",
     icon: Terminal,
     title: "Monitor & iterate",
-    description: "Stream live logs, view test results, and check security scan reports. Push a new commit and SecDev redeploys automatically.",
-    action: { label: "View logs", href: "/console/logs" },
+    description: "Stream live logs, view test results, and security scan reports. Push a new commit and SecDev redeploys automatically.",
+    detail: "Build logs stream in real time inside the Deployments panel. Once the build completes, Inngest automatically triggers the full test pipeline — HTTP health checks on every route, OWASP security scans, and performance load tests. Results appear in the Testing tab broken down by category. To redeploy, push a new commit to the same branch and trigger a new deployment from the console.",
   },
 ];
 
@@ -57,12 +57,7 @@ export default function QuickStartPage() {
               <div className="flex-1">
                 <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-1">{s.title}</h3>
                 <p className="text-sm text-gray-500 dark:text-zinc-400 mb-3 leading-relaxed">{s.description}</p>
-                <Link
-                  href={s.action.href}
-                  className="inline-flex items-center gap-1.5 text-xs font-semibold text-gray-700 dark:text-zinc-300 hover:text-black dark:hover:text-white transition-colors"
-                >
-                  {s.action.label} <ArrowRight className="w-3.5 h-3.5" />
-                </Link>
+                <p className="text-xs text-gray-400 dark:text-zinc-500 leading-relaxed border-l-2 border-gray-200 dark:border-zinc-700 pl-3">{s.detail}</p>
               </div>
             </div>
           );

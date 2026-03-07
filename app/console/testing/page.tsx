@@ -3,12 +3,13 @@
 import { useEffect, useState, useCallback } from "react";
 import {
   TestTube2, Play, RefreshCw, CheckCircle2, XCircle,
-  Clock, Globe, Sparkles, Loader2,
+  Clock, Globe, Sparkles, Loader2, ExternalLink,
 } from "lucide-react";
 
 interface Deployment {
   sandboxId: string;
   repoName: string;
+  repoUrl: string;
   status: string;
   publicUrl: string;
 }
@@ -37,6 +38,12 @@ const STATUS_BADGE: Record<string, string> = {
   error: "bg-yellow-50 text-yellow-700 border-yellow-200 dark:bg-yellow-500/10 dark:text-yellow-400 dark:border-yellow-500/20",
 };
 
+const DEPLOY_STATUS_BADGE: Record<string, string> = {
+  live: "bg-green-500",
+  deploying: "bg-yellow-500 animate-pulse",
+  failed: "bg-red-500",
+};
+
 export default function Page() {
   const [deployments, setDeployments] = useState<Deployment[]>([]);
   const [selectedSandbox, setSelectedSandbox] = useState<string>("");
@@ -47,15 +54,19 @@ export default function Page() {
   const [running, setRunning] = useState(false);
   const [analysis, setAnalysis] = useState<string | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
+  const [deployError, setDeployError] = useState<string | null>(null);
+
+  const selectedDeployment = deployments.find((d) => d.sandboxId === selectedSandbox);
 
   useEffect(() => {
     fetch("/api/deploy")
       .then((r) => r.json())
       .then((d) => {
         if (d.ok) {
-          const live = (d.deployments ?? []).filter((dep: Deployment) => dep.status === "live");
-          setDeployments(live);
-          if (live.length > 0 && !selectedSandbox) setSelectedSandbox(live[0].sandboxId);
+          // Show all non-failed deployments so users can see deploying + live
+          const all = (d.deployments ?? []).filter((dep: Deployment) => dep.status !== "failed");
+          setDeployments(all);
+          if (all.length > 0) setSelectedSandbox((prev) => prev || all[0].sandboxId);
         }
       })
       .catch(() => null);
@@ -72,7 +83,14 @@ export default function Page() {
     setLoading(false);
   }, [selectedSandbox]);
 
-  useEffect(() => { fetchRuns(); }, [fetchRuns]);
+  // Reset runs when sandbox changes
+  useEffect(() => {
+    setRuns([]);
+    setResults([]);
+    setSelectedRun(null);
+    setAnalysis(null);
+    fetchRuns();
+  }, [fetchRuns]);
 
   const fetchResults = async (runId: string) => {
     setSelectedRun(runId);
@@ -85,7 +103,9 @@ export default function Page() {
   };
 
   const handleRun = async () => {
-    if (!selectedSandbox) return;
+    if (!selectedSandbox) { setDeployError("Select a deployment first."); return; }
+    if (selectedDeployment?.status !== "live") { setDeployError("Deployment must be live to run tests."); return; }
+    setDeployError(null);
     setRunning(true);
     try {
       const res = await fetch("/api/tests/run", {
@@ -98,8 +118,10 @@ export default function Page() {
         setTimeout(fetchRuns, 1000);
         setTimeout(fetchRuns, 5000);
         setTimeout(fetchRuns, 15000);
+      } else {
+        setDeployError(data.error ?? "Failed to start test run");
       }
-    } catch { /* ignore */ }
+    } catch { setDeployError("Network error."); }
     setRunning(false);
   };
 
@@ -126,44 +148,88 @@ export default function Page() {
 
   return (
     <div className="max-w-5xl mx-auto">
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-            <TestTube2 className="w-6 h-6" /> Test Suite
-          </h1>
-          <p className="text-sm text-gray-500 dark:text-zinc-400 mt-1">
-            HTTP health checks on all discovered routes
+      {/* Header */}
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+          <TestTube2 className="w-6 h-6" /> Test Suite
+        </h1>
+        <p className="text-sm text-gray-500 dark:text-zinc-400 mt-1">
+          HTTP health checks on all discovered routes
+        </p>
+      </div>
+
+      {/* Deployment selector card */}
+      <div className="mb-6 p-4 rounded-xl border border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-900">
+        <label className="block text-xs font-semibold text-gray-500 dark:text-zinc-400 uppercase tracking-wide mb-2">
+          Select Deployment
+        </label>
+        {deployments.length === 0 ? (
+          <p className="text-sm text-yellow-600 dark:text-yellow-400">
+            No deployments found. Deploy a project first from the{" "}
+            <a href="/console/deployments" className="underline">Deployments</a> page.
           </p>
-        </div>
-        <div className="flex items-center gap-3">
-          <select
-            value={selectedSandbox}
-            onChange={(e) => setSelectedSandbox(e.target.value)}
-            className="px-3 py-2 text-sm border border-gray-200 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-900 text-gray-900 dark:text-white"
-          >
-            {deployments.length === 0 && <option value="">No live deployments</option>}
-            {deployments.map((d) => (
-              <option key={d.sandboxId} value={d.sandboxId}>
-                {d.repoName} ({d.sandboxId.slice(0, 8)})
-              </option>
-            ))}
-          </select>
-          <button
-            onClick={handleRun}
-            disabled={running || !selectedSandbox}
-            className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors disabled:opacity-50"
-          >
-            {running ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
-            Run Tests
-          </button>
-          <button
-            onClick={fetchRuns}
-            disabled={loading}
-            className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 dark:text-zinc-300 bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 hover:bg-gray-50 dark:hover:bg-zinc-700 rounded-lg transition-colors disabled:opacity-50"
-          >
-            <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
-          </button>
-        </div>
+        ) : (
+          <>
+            <div className="flex flex-wrap items-center gap-3">
+              <select
+                value={selectedSandbox}
+                onChange={(e) => setSelectedSandbox(e.target.value)}
+                className="flex-1 min-w-0 px-3 py-2 text-sm border border-gray-200 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-gray-900 dark:text-white"
+              >
+                {deployments.map((d) => (
+                  <option key={d.sandboxId} value={d.sandboxId}>
+                    [{d.status.toUpperCase()}] {d.repoName} — {d.sandboxId.slice(0, 12)}
+                  </option>
+                ))}
+              </select>
+              <button
+                onClick={handleRun}
+                disabled={running}
+                className="flex items-center gap-2 px-5 py-2 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 rounded-lg transition-colors disabled:opacity-60"
+              >
+                {running ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
+                {running ? "Starting…" : "Run Tests"}
+              </button>
+              <button
+                onClick={fetchRuns}
+                disabled={loading}
+                title="Refresh runs"
+                className="flex items-center justify-center w-9 h-9 text-gray-600 dark:text-zinc-300 bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 hover:bg-gray-50 dark:hover:bg-zinc-700 rounded-lg transition-colors disabled:opacity-50"
+              >
+                <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
+              </button>
+            </div>
+            {selectedDeployment && (
+              <div className="mt-3 flex flex-wrap items-center gap-3 text-xs">
+                <span className="flex items-center gap-1.5">
+                  <span className={`w-2 h-2 rounded-full ${DEPLOY_STATUS_BADGE[selectedDeployment.status] ?? "bg-gray-400"}`} />
+                  <span className="font-medium text-gray-700 dark:text-zinc-300">{selectedDeployment.status}</span>
+                </span>
+                <span className="text-gray-400">·</span>
+                <a
+                  href={selectedDeployment.publicUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1 text-indigo-600 dark:text-indigo-400 hover:underline font-mono truncate max-w-xs"
+                >
+                  {selectedDeployment.publicUrl} <ExternalLink className="w-3 h-3 shrink-0" />
+                </a>
+                <span className="text-gray-400">·</span>
+                <a
+                  href={selectedDeployment.repoUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1 text-gray-500 dark:text-zinc-400 hover:underline"
+                >
+                  {selectedDeployment.repoName} <ExternalLink className="w-3 h-3 shrink-0" />
+                </a>
+              </div>
+            )}
+            {deployError && (
+              <p className="mt-2 text-xs text-red-600 dark:text-red-400">{deployError}</p>
+            )}
+          </>
+        )}
       </div>
 
       {/* Runs list */}

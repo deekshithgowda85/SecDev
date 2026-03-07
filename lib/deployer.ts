@@ -289,7 +289,13 @@ async function runDeploymentPipeline(
       await setStatus("failed");
       return;
     }
-    const distDir = lsResult.stdout.includes("dist") ? "dist" : "build";
+    // Detect output directory AFTER the build (dist/ is gitignored, won't appear in pre-build ls)
+    const distCheckResult = await sandbox.commands.run(
+      `[ -d /home/user/repo/dist ] && echo dist || ([ -d /home/user/repo/build ] && echo build || echo dist)`,
+      { timeoutMs: 5_000 }
+    );
+    const distDir = distCheckResult.stdout.trim() || "dist";
+    log(`   Output directory: ${distDir}/`);
     startCmd = `serve -s /home/user/repo/${distDir} -l 3000`;
   } else if (hasPackageJson && pkgContent.includes('"start"')) {
     log(`🔍 Detected: Node.js app`);
@@ -333,12 +339,23 @@ async function runDeploymentPipeline(
     { timeoutMs: 30_000 }
   );
   const httpCode = portCheck.stdout.trim();
-  if (httpCode === "unreachable" || httpCode === "") {
-    // Grab last lines of server log for diagnostics
-    const srvLog = await sandbox.commands.run("tail -20 /tmp/server.log 2>&1", {
+  const codeNum = parseInt(httpCode, 10);
+  const isHealthy = codeNum >= 200 && codeNum < 400;
+
+  // Always dump server log if something looks wrong
+  if (httpCode === "unreachable" || httpCode === "" || !isHealthy) {
+    const srvLog = await sandbox.commands.run("tail -30 /tmp/server.log 2>&1", {
       timeoutMs: 5_000,
     });
-    log(`⚠️  Server log:\n${srvLog.stdout}`, "warn");
+    if (httpCode === "unreachable" || httpCode === "") {
+      log(`⚠️  Server did not respond — server log:\n${srvLog.stdout}`, "warn");
+      await setStatus("failed");
+      return;
+    } else {
+      // Server is up but returned an error (e.g. 404). Log it but keep going —
+      // some frameworks redirect / to /login (3xx caught above, 4xx is suspicious).
+      log(`⚠️  Server returned HTTP ${httpCode}. Server log:\n${srvLog.stdout}`, "warn");
+    }
   } else {
     log(`✅ Server responding (HTTP ${httpCode})`);
   }

@@ -7,8 +7,8 @@ import { runPerformanceTests } from "@/lib/test-functions/performance-tests";
 import { runVibetest } from "@/lib/test-functions/vibetest-run";
 import { runSecurityAgent } from "@/lib/security-agent/functions";
 
-// Allow Inngest handler up to 10 minutes (playwright install + 4 agents)
-export const maxDuration = 600;
+// Allow Inngest handler up to 5 minutes (max for Vercel hobby plan)
+export const maxDuration = 300;
 
 export const { GET, POST, PUT } = serve({
   client: inngest,

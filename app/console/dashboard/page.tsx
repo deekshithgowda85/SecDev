@@ -5,6 +5,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import type { DeploymentStatus } from "@/lib/mock-api";
+import { RepositoryList } from "@/components/console/repository-list";
 
 function timeAgo(iso: string) {
   const m = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
@@ -121,6 +122,19 @@ export default function DashboardPage() {
             <ArrowRight className="w-4 h-4 text-gray-400 dark:text-zinc-600 group-hover:text-indigo-500 transition-colors" />
           </Link>
         ))}
+      </div>
+
+      {/* Repositories section */}
+      <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl overflow-hidden">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200 dark:border-zinc-800">
+          <h2 className="text-sm font-semibold text-gray-900 dark:text-white">Repositories</h2>
+          <Link href="/console/github" className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline">
+            View all →
+          </Link>
+        </div>
+        <div className="p-5">
+          <RepositoryList limit={5} showViewToggle={false} defaultView="table" compact />
+        </div>
       </div>
 
       {/* Recent deployments */}

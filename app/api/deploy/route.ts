@@ -4,14 +4,27 @@ import { startDeployment } from "@/lib/deployer";
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { repoUrl } = body;
-    if (!repoUrl) return NextResponse.json({ error: "repoUrl required" }, { status: 400 });
+    const { repo_name, repo_url, branch } = body;
 
-    // Start deployment (stubbed)
-    const result = await startDeployment(repoUrl);
+    // Support both old (repoUrl) and new field names
+    const targetUrl: string = repo_url ?? body.repoUrl;
+    if (!targetUrl) {
+      return NextResponse.json({ error: "repo_url required" }, { status: 400 });
+    }
 
-    return NextResponse.json({ ok: true, deployment: result });
-  } catch (err: any) {
-    return NextResponse.json({ ok: false, error: err?.message || String(err) }, { status: 500 });
+    const result = await startDeployment(targetUrl);
+
+    return NextResponse.json({
+      ok: true,
+      deployment: {
+        ...result,
+        repo_name: repo_name ?? null,
+        repo_url: targetUrl,
+        branch: branch ?? "main",
+      },
+    });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
+    return NextResponse.json({ ok: false, error: message }, { status: 500 });
   }
 }

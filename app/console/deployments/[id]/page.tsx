@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -11,7 +11,12 @@ import {
   CheckCircle2,
   XCircle,
   Loader2,
+  RotateCcw,
+  AlertTriangle,
+  WifiOff,
 } from "lucide-react";
+
+const E2B_TIMEOUT_MS = 30 * 60 * 1000;
 
 interface LogLine {
   ts: number;
@@ -46,11 +51,14 @@ const LEVEL_PREFIX: Record<LogLine["level"], string> = {
 export default function Page() {
   const params = useParams<{ id: string }>();
   const sandboxId = params.id;
+  const router = useRouter();
 
   const [record, setRecord] = useState<DeploymentRecord | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [autoScroll, setAutoScroll] = useState(true);
   const [stopping, setStopping] = useState(false);
+  const [redeploying, setRedeploying] = useState(false);
+  const [checking, setChecking] = useState(false);
   const logEndRef = useRef<HTMLDivElement>(null);
   const logContainerRef = useRef<HTMLDivElement>(null);
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -122,6 +130,37 @@ export default function Page() {
     }
   };
 
+  const handleRedeploy = async () => {
+    setRedeploying(true);
+    try {
+      const res = await fetch(`/api/deploy/${sandboxId}`, { method: "POST" });
+      const data = await res.json();
+      if (data.ok && data.deployment?.sandboxId) {
+        router.push(`/console/deployments/${data.deployment.sandboxId}`);
+      } else {
+        setError(data.error ?? "Redeploy failed");
+      }
+    } catch {
+      setError("Network error — could not redeploy");
+    } finally {
+      setRedeploying(false);
+    }
+  };
+
+  const handleCheckAlive = async () => {
+    setChecking(true);
+    try {
+      const res = await fetch(`/api/deploy/${sandboxId}`, { method: "PATCH" });
+      const data = await res.json();
+      if (data.ok) {
+        // Refresh the record so the UI reflects the updated status
+        await fetchRecord();
+      }
+    } finally {
+      setChecking(false);
+    }
+  };
+
   const StatusIcon = () => {
     if (!record) return null;
     if (record.status === "deploying")
@@ -177,6 +216,18 @@ export default function Page() {
               <RefreshCw className="w-4 h-4" />
             </button>
           )}
+          {/* Check if still alive — useful when sandbox may have timed out */}
+          {record?.status === "live" && (
+            <button
+              onClick={handleCheckAlive}
+              disabled={checking}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-700 dark:text-zinc-300 border border-gray-200 dark:border-zinc-700 hover:bg-gray-50 dark:hover:bg-zinc-800 rounded-lg transition-colors disabled:opacity-50"
+              title="Ping the sandbox to confirm it is still running"
+            >
+              {checking ? <Loader2 className="w-3 h-3 animate-spin" /> : <WifiOff className="w-3 h-3" />}
+              {checking ? "Checking…" : "Check alive"}
+            </button>
+          )}
           {record?.status === "live" && (
             <a
               href={record.publicUrl}
@@ -187,6 +238,17 @@ export default function Page() {
               <ExternalLink className="w-3 h-3" />
               Open App
             </a>
+          )}
+          {/* Redeploy button — always visible for failed; also visible for live if timed out */}
+          {record && (record.status === "failed" || (record.status === "live" && Date.now() - record.startedAt > E2B_TIMEOUT_MS)) && (
+            <button
+              onClick={handleRedeploy}
+              disabled={redeploying}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors disabled:opacity-60"
+            >
+              {redeploying ? <Loader2 className="w-3 h-3 animate-spin" /> : <RotateCcw className="w-3 h-3" />}
+              {redeploying ? "Starting…" : "Redeploy"}
+            </button>
           )}
           {record && record.status !== "failed" && (
             <button
@@ -313,9 +375,55 @@ export default function Page() {
               <p className="text-xs font-semibold text-red-700 dark:text-red-400 mb-1">
                 Deployment failed
               </p>
-              <p className="text-xs text-red-600 dark:text-red-500">
-                Check the logs above for error details. You can redeploy from the Projects page.
-              </p>
+              <div className="flex items-center justify-between gap-4">
+                <p className="text-xs text-red-600 dark:text-red-500">
+                  Check the logs above for error details.
+                </p>
+                <button
+                  onClick={handleRedeploy}
+                  disabled={redeploying}
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors disabled:opacity-60 shrink-0"
+                >
+                  {redeploying ? <Loader2 className="w-3 h-3 animate-spin" /> : <RotateCcw className="w-3 h-3" />}
+                  {redeploying ? "Starting…" : "Redeploy"}
+                </button>
+              </div>
+            </div>
+          )}
+          {/* Timed-out warning for live sandboxes older than 30 min */}
+          {record.status === "live" && Date.now() - record.startedAt > E2B_TIMEOUT_MS && (
+            <div className="mt-4 px-4 py-3 bg-orange-50 dark:bg-orange-500/10 border border-orange-200 dark:border-orange-500/20 rounded-xl">
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex items-start gap-2">
+                  <AlertTriangle className="w-4 h-4 text-orange-500 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-xs font-semibold text-orange-700 dark:text-orange-400">
+                      Sandbox may have timed out
+                    </p>
+                    <p className="text-xs text-orange-600 dark:text-orange-500 mt-0.5">
+                      E2B sandboxes shut down after 30 minutes. Click &ldquo;Check alive&rdquo; to confirm, or Redeploy to start a fresh instance.
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    onClick={handleCheckAlive}
+                    disabled={checking}
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-orange-700 dark:text-orange-400 border border-orange-300 dark:border-orange-500/30 hover:bg-orange-100 dark:hover:bg-orange-500/20 rounded-lg transition-colors disabled:opacity-50"
+                  >
+                    {checking ? <Loader2 className="w-3 h-3 animate-spin" /> : <WifiOff className="w-3 h-3" />}
+                    {checking ? "Checking…" : "Check alive"}
+                  </button>
+                  <button
+                    onClick={handleRedeploy}
+                    disabled={redeploying}
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors disabled:opacity-60"
+                  >
+                    {redeploying ? <Loader2 className="w-3 h-3 animate-spin" /> : <RotateCcw className="w-3 h-3" />}
+                    {redeploying ? "Starting…" : "Redeploy"}
+                  </button>
+                </div>
+              </div>
             </div>
           )}
         </>

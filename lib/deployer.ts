@@ -367,13 +367,48 @@ async function runDeploymentPipeline(
 // ── Sandbox management ─────────────────────────────────────────────────────────
 
 export async function killSandbox(sandboxId: string): Promise<void> {
-  const sandbox = await Sandbox.connect(sandboxId, {
-    apiKey: process.env.E2B_API_KEY,
-  });
-  await sandbox.kill();
-  // Mark as failed in the database
+  // Sandbox may already be dead (timed out) — swallow the connect error
+  try {
+    const sandbox = await Sandbox.connect(sandboxId, {
+      apiKey: process.env.E2B_API_KEY,
+    });
+    await sandbox.kill();
+  } catch { /* already dead — that's fine, just mark failed below */ }
   await ensureTables();
   const sql = getDb();
   await sql`UPDATE deployments SET status = 'failed' WHERE sandbox_id = ${sandboxId}`;
+}
+
+/**
+ * Try to connect to the sandbox and ping its server.
+ * Updates the DB status and returns the new status.
+ * Used to detect E2B's 30-minute auto-shutdown.
+ */
+export async function refreshSandboxStatus(
+  sandboxId: string
+): Promise<"live" | "failed"> {
+  await ensureTables();
+  const sql = getDb();
+  try {
+    const sandbox = await Sandbox.connect(sandboxId, {
+      apiKey: process.env.E2B_API_KEY,
+    });
+    // Quick HTTP ping inside the sandbox
+    const result = await sandbox.commands.run(
+      `curl -s -o /dev/null -w '%{http_code}' http://localhost:3000/ 2>&1 || echo unreachable`,
+      { timeoutMs: 15_000 }
+    );
+    const code = result.stdout.trim();
+    if (!code || code === "unreachable" || code === "000") {
+      await sql`UPDATE deployments SET status = 'failed' WHERE sandbox_id = ${sandboxId}`;
+      return "failed";
+    }
+    // Anything that got a response means the sandbox is alive
+    return "live";
+  } catch {
+    // connect() threw — sandbox has timed out / been killed
+    await sql`UPDATE deployments SET status = 'failed' WHERE sandbox_id = ${sandboxId}`;
+    return "failed";
+  }
 }
 

@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Rocket, ExternalLink, Trash2, RefreshCw, Server, ScrollText } from "lucide-react";
+import { Rocket, ExternalLink, Trash2, RefreshCw, Server, ScrollText, RotateCcw, AlertTriangle } from "lucide-react";
 
 interface DeploymentSummary {
   sandboxId: string;
@@ -14,6 +15,9 @@ interface DeploymentSummary {
   startedAt: number;
   logCount: number;
 }
+
+// E2B free sandboxes auto-shutdown after 30 minutes
+const E2B_TIMEOUT_MS = 30 * 60 * 1000;
 
 const STATUS_BADGE: Record<DeploymentSummary["status"], string> = {
   deploying:
@@ -30,10 +34,12 @@ const STATUS_DOT: Record<DeploymentSummary["status"], string> = {
 };
 
 export default function Page() {
+  const router = useRouter();
   const [deployments, setDeployments] = useState<DeploymentSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [killingId, setKillingId] = useState<string | null>(null);
+  const [redeployingId, setRedeployingId] = useState<string | null>(null);
 
   const fetchDeployments = async () => {
     setLoading(true);
@@ -55,7 +61,6 @@ export default function Page() {
 
   useEffect(() => {
     fetchDeployments();
-    // Auto-refresh while any deployment is in "deploying" state
     const interval = setInterval(() => {
       setDeployments((prev) => {
         if (prev.some((d) => d.status === "deploying")) fetchDeployments();
@@ -77,6 +82,24 @@ export default function Page() {
       // ignore
     } finally {
       setKillingId(null);
+    }
+  };
+
+  const handleRedeploy = async (sandboxId: string) => {
+    setRedeployingId(sandboxId);
+    try {
+      const res = await fetch(`/api/deploy/${sandboxId}`, { method: "POST" });
+      const data = await res.json();
+      if (data.ok && data.deployment?.sandboxId) {
+        // Navigate to the new deployment's log page
+        router.push(`/console/deployments/${data.deployment.sandboxId}`);
+      } else {
+        alert(data.error ?? "Redeploy failed");
+      }
+    } catch {
+      alert("Network error — could not redeploy");
+    } finally {
+      setRedeployingId(null);
     }
   };
 
@@ -149,6 +172,12 @@ export default function Page() {
                       <span className={`w-1.5 h-1.5 rounded-full ${STATUS_DOT[d.status]}`} />
                       {d.status}
                     </span>
+                    {/* Timed-out warning: live but older than 30 min */}
+                    {d.status === "live" && Date.now() - d.startedAt > E2B_TIMEOUT_MS && (
+                      <span className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full border font-medium shrink-0 bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-500/10 dark:text-orange-400 dark:border-orange-500/20">
+                        <AlertTriangle className="w-3 h-3" /> may have timed out
+                      </span>
+                    )}
                   </div>
                   <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-500 dark:text-zinc-400 mt-1">
                     <span>Branch: {d.branch}</span>
@@ -179,21 +208,27 @@ export default function Page() {
                     <ScrollText className="w-3 h-3" />
                     Logs
                   </Link>
-                  {d.publicUrl && (
+                  {d.publicUrl && d.status === "live" && (
                     <a
                       href={d.publicUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors ${
-                        d.status === "live"
-                          ? "text-white bg-gray-900 dark:bg-white dark:text-gray-900 hover:bg-gray-700 dark:hover:bg-gray-100"
-                          : "text-gray-400 dark:text-zinc-500 bg-gray-100 dark:bg-zinc-800 cursor-default pointer-events-none"
-                      }`}
-                      onClick={d.status !== "live" ? (e) => e.preventDefault() : undefined}
+                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors text-white bg-gray-900 dark:bg-white dark:text-gray-900 hover:bg-gray-700 dark:hover:bg-gray-100"
                     >
                       <ExternalLink className="w-3 h-3" />
-                      {d.status === "live" ? "Open" : "Preview URL"}
+                      Open
                     </a>
+                  )}
+                  {/* Redeploy for failed OR potentially timed-out live sandboxes */}
+                  {(d.status === "failed" || (d.status === "live" && Date.now() - d.startedAt > E2B_TIMEOUT_MS)) && (
+                    <button
+                      onClick={() => handleRedeploy(d.sandboxId)}
+                      disabled={redeployingId === d.sandboxId}
+                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors disabled:opacity-60"
+                    >
+                      <RotateCcw className="w-3 h-3" />
+                      {redeployingId === d.sandboxId ? "Starting…" : "Redeploy"}
+                    </button>
                   )}
                   <button
                     onClick={() => handleKill(d.sandboxId)}

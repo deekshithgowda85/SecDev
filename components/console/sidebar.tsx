@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import {
   LayoutDashboard, Rocket, FolderGit2, Github, KeyRound, Terminal,
   TestTube2, Shield, Zap, BarChart3, Box, Settings, CreditCard, User,
-  ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Database,
+  ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Database, Globe,
 } from "lucide-react";
 
 interface NavItem { label: string; href: string; icon: React.ElementType; }
@@ -34,6 +34,7 @@ const navGroups: NavGroup[] = [
       { label: "Security Scans", href: "/console/security", icon: Shield },
       { label: "API Testing", href: "/console/api-testing", icon: Zap },
       { label: "Performance", href: "/console/performance", icon: BarChart3 },
+      { label: "Vibetest", href: "/console/vibetest", icon: Globe },
     ],
   },
   {

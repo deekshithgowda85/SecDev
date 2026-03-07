@@ -41,6 +41,9 @@ export async function GET(request: Request) {
       case "performance":
         results = await sql`SELECT * FROM performance_results WHERE run_id = ${runId} ORDER BY created_at ASC`;
         break;
+      case "vibetest":
+        results = await sql`SELECT * FROM vibetest_results WHERE run_id = ${runId} ORDER BY created_at ASC`;
+        break;
       default:
         return NextResponse.json({ ok: false, error: "Unknown test type" }, { status: 400 });
     }

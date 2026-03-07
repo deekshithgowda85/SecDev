@@ -137,5 +137,21 @@ export async function ensureTables(): Promise<void> {
     )
   `;
 
+  // Vibetest browser-agent results (links, console errors, a11y, UI bugs)
+  await sql`
+    CREATE TABLE IF NOT EXISTS vibetest_results (
+      id          BIGSERIAL PRIMARY KEY,
+      run_id      TEXT      NOT NULL,
+      sandbox_id  TEXT      NOT NULL,
+      agent       TEXT      NOT NULL,
+      category    TEXT      NOT NULL,
+      status      TEXT      NOT NULL,
+      finding     TEXT      NOT NULL,
+      detail      TEXT,
+      url         TEXT,
+      created_at  BIGINT    NOT NULL
+    )
+  `;
+
   tablesReady = true;
 }

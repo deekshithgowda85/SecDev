@@ -16,6 +16,7 @@ const EVENT_MAP: Record<string, string> = {
   security: "test/security.run",
   api: "test/api.run",
   performance: "test/performance.run",
+  vibetest: "test/vibetest.run",
 };
 
 export async function POST(request: Request) {

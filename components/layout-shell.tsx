@@ -3,15 +3,17 @@ import { usePathname } from "next/navigation";
 import { Navbar } from "@/components/navbar";
 import { Footerdemo } from "@/components/footer";
 
-const AUTH_ROUTES = ["/login", "/register"];
+const EXCLUDED = ["/login", "/register"];
 
 export function LayoutShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const isAuth = AUTH_ROUTES.includes(pathname);
+  const isExcluded = EXCLUDED.includes(pathname) || pathname.startsWith("/console");
+
+  if (isExcluded) return <>{children}</>;
 
   return (
     <>
-      {!isAuth && <Navbar />}
+      <Navbar />
       <main>{children}</main>
       <Footerdemo />
     </>

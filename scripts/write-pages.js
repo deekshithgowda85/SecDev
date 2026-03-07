@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-require-imports */
 const fs = require('fs');
 const pages = [
   ['deployments', 'Deployments', 'Deployment history and live status will appear here once connected to a real CI/CD backend.', 'Connect a Repository', '/console/github'],

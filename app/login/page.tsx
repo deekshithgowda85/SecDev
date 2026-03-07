@@ -23,8 +23,8 @@ export default function LoginPage() {
     try {
       await signInWithEmail(email, password);
       router.push("/");
-    } catch (err: any) {
-      setError(err?.message || "Sign in failed");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Sign in failed");
     } finally {
       setLoading(false);
     }
@@ -168,7 +168,7 @@ export default function LoginPage() {
             </div>
           </div>
           <p className="text-sm text-zinc-300 leading-relaxed">
-            "Amazing platform! The user experience is seamless and the features are exactly what I needed."
+            &quot;Amazing platform! The user experience is seamless and the features are exactly what I needed.&quot;
           </p>
         </div>
       </div>

@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import Link from "next/link";
 import {
   Zap, Play, RefreshCw, CheckCircle2, XCircle,
-  Sparkles, Loader2, ExternalLink,
+  Sparkles, Loader2, ExternalLink, Download,
 } from "lucide-react";
 
 const DEPLOY_STATUS_BADGE: Record<string, string> = {
@@ -94,6 +95,7 @@ export default function Page() {
   }, [selectedSandbox]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional reset on sandbox change
     setRuns([]);
     setResults([]);
     setSelectedRun(null);
@@ -150,6 +152,22 @@ export default function Page() {
     setAnalyzing(false);
   };
 
+  const handleDownload = async (runId: string) => {
+    try {
+      const res = await fetch(`/api/tests/results?runId=${runId}`);
+      const data = await res.json();
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `api-results-${runId}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch { /* ignore */ }
+  };
+
   useEffect(() => {
     if (runs.some((r) => r.status === "running")) {
       const interval = setInterval(fetchRuns, 5000);
@@ -177,7 +195,7 @@ export default function Page() {
         {deployments.length === 0 ? (
           <p className="text-sm text-yellow-600 dark:text-yellow-400">
             No deployments found. Deploy a project first from the{" "}
-            <a href="/console/deployments" className="underline">Deployments</a> page.
+<Link href="/console/deployments" className="underline">Deployments</Link> page.
           </p>
         ) : (
           <>
@@ -281,13 +299,21 @@ export default function Page() {
               </div>
               <div className="flex items-center gap-2">
                 {run.status === "completed" && (
-                  <button
-                    onClick={(e) => { e.stopPropagation(); handleAnalyze(run.id); }}
-                    disabled={analyzing}
-                    className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-purple-700 dark:text-purple-400 bg-purple-50 dark:bg-purple-500/10 border border-purple-200 dark:border-purple-500/20 rounded-lg hover:bg-purple-100 dark:hover:bg-purple-500/20 transition-colors disabled:opacity-50"
-                  >
-                    <Sparkles className="w-3 h-3" /> AI Analyze
-                  </button>
+                  <>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleDownload(run.id); }}
+                      className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-zinc-400 bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-700 transition-colors"
+                    >
+                      <Download className="w-3 h-3" /> Download
+                    </button>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleAnalyze(run.id); }}
+                      disabled={analyzing}
+                      className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-purple-700 dark:text-purple-400 bg-purple-50 dark:bg-purple-500/10 border border-purple-200 dark:border-purple-500/20 rounded-lg hover:bg-purple-100 dark:hover:bg-purple-500/20 transition-colors disabled:opacity-50"
+                    >
+                      <Sparkles className="w-3 h-3" /> AI Analyze
+                    </button>
+                  </>
                 )}
                 <span className={`px-2 py-1 text-xs font-medium rounded-md border ${
                   run.status === "running" ? "bg-yellow-50 text-yellow-700 border-yellow-200 dark:bg-yellow-500/10 dark:text-yellow-400 dark:border-yellow-500/20" :

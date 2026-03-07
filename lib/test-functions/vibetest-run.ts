@@ -218,13 +218,16 @@ export const runVibetest = inngest.createFunction(
       return { ok: false, reason: "deployment not found" };
     }
 
-    // 3. Install Playwright inside the deployed E2B sandbox (skip if pre-baked)
+    // 3. Ensure /tmp/vt exists and Playwright is available (pre-baked or install fallback)
     const installResult = await step.run("setup-playwright", async () => {
       let sandbox: Sandbox | null = null;
       try {
         sandbox = await Sandbox.connect(sandboxId, {
           apiKey: process.env.E2B_API_KEY!,
         });
+        // Always create the working directory — required even when Playwright is pre-baked
+        await sandbox.commands.run("mkdir -p /tmp/vt", { timeoutMs: 10_000 });
+
         // Check if Playwright is already pre-installed in the template image
         const check = await sandbox.commands.run(
           "test -d /opt/playwright/node_modules/playwright && echo PREINSTALLED || echo MISSING",
@@ -235,7 +238,7 @@ export const runVibetest = inngest.createFunction(
         }
         // Fall back: install into /tmp/vt/ (older template without pre-baked Playwright)
         const res = await sandbox.commands.run(
-          "mkdir -p /tmp/vt && cd /tmp/vt && npm install playwright@latest 2>&1 && /tmp/vt/node_modules/.bin/playwright install chromium --with-deps 2>&1",
+          "cd /tmp/vt && npm install playwright@latest 2>&1 && /tmp/vt/node_modules/.bin/playwright install chromium --with-deps 2>&1",
           { timeoutMs: 6 * 60 * 1000 }
         );
         return { exitCode: res.exitCode, ok: res.exitCode === 0 };
@@ -246,13 +249,13 @@ export const runVibetest = inngest.createFunction(
 
     if (!installResult.ok) {
       const errMsg = "error" in installResult
-        ? `Playwright install failed: ${installResult.error}`
-        : `Playwright install failed: exit ${installResult.exitCode}`;
+        ? `Playwright setup failed: ${installResult.error}`
+        : `Playwright setup failed: exit ${installResult.exitCode}`;
       await sql`
         UPDATE test_runs SET status='failed', finished_at=${Date.now()}, summary=${errMsg}
         WHERE id=${runId}
       `;
-      return { ok: false, reason: "playwright install failed" };
+      return { ok: false, reason: "playwright setup failed" };
     }
 
     // 4. Upload agent scripts and run all 4 agents
@@ -261,7 +264,7 @@ export const runVibetest = inngest.createFunction(
         apiKey: process.env.E2B_API_KEY!,
       });
 
-      // Write scripts via base64 (avoids any shell quoting issues)
+      // Write scripts using Node.js via stdin (reliable for large scripts, no shell quoting issues)
       const scripts = [
         { name: "links.js", src: LINK_SCRIPT },
         { name: "console.js", src: CONSOLE_SCRIPT },
@@ -270,21 +273,29 @@ export const runVibetest = inngest.createFunction(
       ];
       for (const { name, src } of scripts) {
         const b64 = Buffer.from(src).toString("base64");
+        // Use node itself to decode + write — avoids echo's argument-length limits
         await sandbox.commands.run(
-          `echo '${b64}' | base64 -d > /tmp/vt/${name}`,
+          `node -e "require('fs').writeFileSync('/tmp/vt/${name}', Buffer.from('${b64}', 'base64').toString())"`,
           { timeoutMs: 15_000 }
         );
       }
 
-      // Run agents sequentially, collect JSON output
+      // Run agents sequentially; catch CommandExitError to salvage stdout on failure
       const base = "http://localhost:3000";
       const out: Record<string, Record<string, unknown>> = {};
       for (const { name } of scripts) {
         const agent = name.replace(".js", "");
-        const res = await sandbox.commands.run(`node /tmp/vt/${name} ${base} 2>&1`, {
-          timeoutMs: 3 * 60 * 1000,
-        });
-        out[agent] = parseAgentOutput(res.stdout, agent);
+        try {
+          const res = await sandbox.commands.run(`node /tmp/vt/${name} ${base} 2>&1`, {
+            timeoutMs: 3 * 60 * 1000,
+          });
+          out[agent] = parseAgentOutput(res.stdout, agent);
+        } catch (err: unknown) {
+          // CommandExitError: exit code != 0 — extract whatever stdout was captured
+          const cmdErr = err as { output?: { stdout?: string; stderr?: string } };
+          const captured = cmdErr?.output?.stdout ?? cmdErr?.output?.stderr ?? "";
+          out[agent] = parseAgentOutput(captured, agent);
+        }
       }
       return out;
     });

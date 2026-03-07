@@ -34,3 +34,37 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+## SecDev Platform (work-in-progress)
+
+This workspace includes starter scaffolding for the SecDev deployment and testing platform:
+
+- Firebase authentication (client-side) for sign up / sign in.
+- Simple navbar and hero UI in the app layout and home page.
+- API route `/api/deploy` to trigger repository deployments (stubbed).
+- `lib/deployer.ts` contains a deployment stub to be replaced with real E2B sandbox orchestration.
+
+Environment variables (add to `.env.local` or `.env`):
+
+```
+NEXT_PUBLIC_FIREBASE_API_KEY=...
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=...
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=...
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=...
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=...
+NEXT_PUBLIC_FIREBASE_APP_ID=...
+NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=...
+```
+
+Run locally:
+
+```bash
+npm install
+npm run dev
+```
+
+Next steps:
+
+- Integrate real E2B sandbox API: create sandboxes, clone repos, run builds and expose public URLs.
+- Add Inngest workflows for async job orchestration and test execution.
+- Harden authentication (verify ID tokens on server routes) and add GitHub OAuth.

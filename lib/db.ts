@@ -16,7 +16,7 @@ export function getDb() {
 let tablesReady = false;
 
 // Bump this version whenever schema migrations are added so ensureTables() re-runs
-const SCHEMA_VERSION = 3;
+const SCHEMA_VERSION = 4;
 
 export async function ensureTables(): Promise<void> {
   if (tablesReady) return;
@@ -212,6 +212,35 @@ export async function ensureTables(): Promise<void> {
   `;
   await sql`
     CREATE INDEX IF NOT EXISTS idx_run_logs_run_id ON run_logs (run_id, id)
+  `;
+
+  // ── Attack Pipeline tables ────────────────────────────────────────────────
+
+  // Full attack-pipeline scan runs
+  await sql`
+    CREATE TABLE IF NOT EXISTS attack_pipeline_runs (
+      id              TEXT PRIMARY KEY,
+      user_id         TEXT NOT NULL DEFAULT '',
+      base_url        TEXT NOT NULL,
+      sandbox_id      TEXT,
+      status          TEXT NOT NULL DEFAULT 'running',
+      created_at      BIGINT NOT NULL,
+      finished_at     BIGINT,
+      routes_found    INT DEFAULT 0,
+      overall_score   INT,
+      risk_level      TEXT,
+      critical_count  INT DEFAULT 0,
+      high_count      INT DEFAULT 0,
+      medium_count    INT DEFAULT 0,
+      low_count       INT DEFAULT 0,
+      passed_count    INT DEFAULT 0,
+      summary         TEXT,
+      report_json     TEXT
+    )
+  `;
+  await sql`
+    CREATE INDEX IF NOT EXISTS idx_attack_pipeline_runs_user
+      ON attack_pipeline_runs (user_id, created_at DESC)
   `;
 
   tablesReady = true;

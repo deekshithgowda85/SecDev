@@ -151,6 +151,7 @@ export default function Page() {
   }, [selectedSandbox]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional reset on sandbox change
     setScanRuns([]);
     setResults([]);
     setSelectedScanRun(null);
@@ -248,6 +249,7 @@ export default function Page() {
   }, [selectedSandbox]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional reset on sandbox change
     setAgentRuns([]);
     setReport(null);
     setSelectedAgentRun(null);

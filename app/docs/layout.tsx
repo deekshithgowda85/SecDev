@@ -3,8 +3,7 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  Book, GitBranch, Terminal, Zap, Shield, Lock, BarChart3,
-  Database, Rocket, TestTube2, KeyRound, Box, ChevronDown, ChevronRight,
+  Book, Rocket, ChevronDown, ChevronRight,
   Menu, X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";

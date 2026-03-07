@@ -3,9 +3,9 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  LayoutDashboard, Rocket, FolderGit2, Github, KeyRound, Terminal,
+  LayoutDashboard, Rocket, FolderGit2, KeyRound, Terminal,
   TestTube2, Shield, Zap, BarChart3, Box, Settings, CreditCard, User,
-  ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Database, Globe, Swords,
+  ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Globe, Swords,
 } from "lucide-react";
 
 interface NavItem { label: string; href: string; icon: React.ElementType; }

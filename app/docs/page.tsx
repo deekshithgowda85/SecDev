@@ -3,67 +3,67 @@ import { ArrowRight, GitBranch, Terminal, Zap, Shield, Lock, BarChart3, Database
 
 const features = [
   {
+    icon: Rocket,
+    title: "Quick Start",
+    description: "Get from zero to your first deployed sandbox in under 5 minutes. Walk through connecting GitHub, configuring your stack, and deploying.",
+    href: "/docs/quick-start",
+    tag: "Getting Started",
+  },
+  {
     icon: GitBranch,
     title: "GitHub Integration",
     description: "Connect any public or private GitHub repository in seconds. SecDev automatically detects your stack and sets up the environment.",
-    href: "/docs/github",
+    href: "/docs/quick-start",
     tag: "Integration",
   },
   {
     icon: Database,
     title: "Neon PostgreSQL",
     description: "Serverless Postgres powered by Neon. Branch your database alongside your code — instant, isolated DB environments per deployment.",
-    href: "/docs/neon",
+    href: "/docs/quick-start",
     tag: "Integration",
   },
   {
     icon: Terminal,
     title: "E2B Sandboxes",
     description: "Every deployment runs in an isolated E2B sandbox — a real Linux environment with full network access, filesystem, and process control.",
-    href: "/docs/sandboxes",
+    href: "/docs/quick-start",
     tag: "Infrastructure",
   },
   {
     icon: Zap,
     title: "Inngest Workflows",
     description: "Long-running deployment pipelines powered by Inngest — durable, retryable, and observable async workflows out of the box.",
-    href: "/docs/workflows",
+    href: "/docs/quick-start",
     tag: "Infrastructure",
   },
   {
     icon: Shield,
     title: "Automated Security Scans",
     description: "Every build is scanned for known CVEs, secrets leakage, and OWASP Top 10 vulnerabilities before any code leaves your sandbox.",
-    href: "/docs/security",
+    href: "/docs/quick-start",
     tag: "Security",
   },
   {
     icon: Lock,
     title: "Isolated Environments",
     description: "Sandboxes are fully isolated from each other and from production. Run untrusted code safely without fear of cross-contamination.",
-    href: "/docs/isolation",
+    href: "/docs/quick-start",
     tag: "Security",
   },
   {
     icon: TestTube2,
     title: "Automated Test Suite",
     description: "SecDev runs your existing test suite and generates regression tests for untested code paths, then reports coverage deltas per PR.",
-    href: "/docs/testing",
+    href: "/docs/quick-start",
     tag: "Testing",
   },
   {
     icon: BarChart3,
     title: "Real-time Observability",
     description: "Stream build logs, test results, and deployment metrics live. Full audit trail stored per run so you can replay any past build.",
-    href: "/docs/metrics",
-    tag: "Observability",
-  },
-  {
-    icon: Rocket,
-    title: "Quick Start",
-    description: "Get from zero to your first deployed sandbox in under 5 minutes. Walk through connecting GitHub, configuring your stack, and deploying.",
     href: "/docs/quick-start",
-    tag: "Getting Started",
+    tag: "Observability",
   },
 ];
 
@@ -108,9 +108,9 @@ export default function DocsIndexPage() {
           const Icon = f.icon;
           return (
             <Link
-              key={f.href}
+              key={f.title}
               href={f.href}
-              className="group flex flex-col gap-3 p-5 rounded-xl border border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:border-gray-400 dark:hover:border-zinc-600 hover:shadow-sm transition-all"
+              className="group flex flex-col gap-3 p-5 rounded-xl border border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 transition-all hover:border-gray-400 dark:hover:border-zinc-600 hover:shadow-sm cursor-pointer"
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="w-9 h-9 rounded-lg bg-gray-100 dark:bg-zinc-800 flex items-center justify-center shrink-0">
@@ -121,7 +121,9 @@ export default function DocsIndexPage() {
                 </span>
               </div>
               <div>
-                <h3 className="text-sm font-semibold text-gray-900 dark:text-white group-hover:text-black dark:group-hover:text-white mb-1">{f.title}</h3>
+                <h3 className="text-sm font-semibold text-gray-900 dark:text-white group-hover:text-black dark:group-hover:text-white mb-1">
+                  {f.title}
+                </h3>
                 <p className="text-xs text-gray-500 dark:text-zinc-500 leading-relaxed">{f.description}</p>
               </div>
               <div className="flex items-center gap-1 text-xs text-gray-400 dark:text-zinc-500 group-hover:text-gray-700 dark:group-hover:text-zinc-300 transition-colors mt-auto">

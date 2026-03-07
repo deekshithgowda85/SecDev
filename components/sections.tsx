@@ -36,23 +36,23 @@ const FEATURES = [
 
 export function FeaturesSection() {
   return (
-    <section id="features" className="bg-black dark:bg-black text-white py-24 px-6">
+    <section id="features" className="bg-gray-50 dark:bg-zinc-950 text-gray-900 dark:text-white py-24 px-6">
       <div className="mx-auto max-w-7xl">
-        <p className="text-cyan-400 text-sm uppercase tracking-widest mb-3">Features</p>
-        <h2 className="text-4xl md:text-5xl font-semibold tracking-tight max-w-2xl">
+        <p className="text-cyan-600 dark:text-cyan-400 text-sm uppercase tracking-widest mb-3">Features</p>
+        <h2 className="text-4xl md:text-5xl font-semibold tracking-tight max-w-2xl text-gray-900 dark:text-white">
           Everything you need to ship with confidence
         </h2>
         <div className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {FEATURES.map((f) => (
             <div
               key={f.title}
-              className="rounded-2xl border border-white/10 bg-white/5 p-6 hover:bg-white/10 transition-colors"
+              className="rounded-2xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 p-6 hover:bg-gray-100 dark:hover:bg-white/10 transition-colors"
             >
-              <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center text-cyan-400 mb-4">
+              <div className="w-10 h-10 rounded-xl bg-gray-100 dark:bg-white/10 flex items-center justify-center text-cyan-600 dark:text-cyan-400 mb-4">
                 {f.icon}
               </div>
-              <h3 className="text-base font-semibold mb-2">{f.title}</h3>
-              <p className="text-sm text-zinc-400 leading-relaxed">{f.desc}</p>
+              <h3 className="text-base font-semibold mb-2 text-gray-900 dark:text-white">{f.title}</h3>
+              <p className="text-sm text-gray-500 dark:text-zinc-400 leading-relaxed">{f.desc}</p>
             </div>
           ))}
         </div>
@@ -63,14 +63,14 @@ export function FeaturesSection() {
 
 export function SolutionsSection() {
   return (
-    <section id="solutions" className="bg-zinc-950 dark:bg-zinc-950 text-white py-24 px-6">
+    <section id="solutions" className="bg-gray-50 dark:bg-zinc-950 text-gray-900 dark:text-white py-24 px-6">
       <div className="mx-auto max-w-7xl grid lg:grid-cols-2 gap-16 items-center">
         <div>
-          <p className="text-cyan-400 text-sm uppercase tracking-widest mb-3">Solutions</p>
-          <h2 className="text-4xl font-semibold tracking-tight mb-6">
+          <p className="text-cyan-600 dark:text-cyan-400 text-sm uppercase tracking-widest mb-3">Solutions</p>
+          <h2 className="text-4xl font-semibold tracking-tight mb-6 text-gray-900 dark:text-white">
             Built for teams that move fast
           </h2>
-          <ul className="space-y-4 text-zinc-400 text-sm">
+          <ul className="space-y-4 text-gray-600 dark:text-zinc-400 text-sm">
             {[
               "CI/CD — validate every PR in an isolated sandbox before it merges",
               "QA — spin ephemeral environments for manual or automated testing",
@@ -78,25 +78,25 @@ export function SolutionsSection() {
               "Demos — share live preview URLs with clients in seconds",
             ].map((item) => (
               <li key={item} className="flex items-start gap-3">
-                <span className="mt-0.5 w-5 h-5 rounded-full bg-cyan-400/20 text-cyan-400 flex items-center justify-center text-xs">✓</span>
+                <span className="mt-0.5 w-5 h-5 rounded-full bg-cyan-500/20 text-cyan-600 dark:text-cyan-400 flex items-center justify-center text-xs shrink-0">✓</span>
                 {item}
               </li>
             ))}
           </ul>
           <div className="mt-8 flex gap-4">
-            <Link href="/register" className="rounded-full bg-white text-black text-sm font-medium px-6 py-3 hover:bg-zinc-200 transition-colors">
+            <Link href="/register" className="rounded-full bg-gray-900 dark:bg-white text-white dark:text-black text-sm font-medium px-6 py-3 hover:bg-gray-700 dark:hover:bg-zinc-200 transition-colors">
               Get started free
             </Link>
           </div>
         </div>
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-8 font-mono text-sm text-green-400 space-y-2">
-          <p className="text-zinc-500"># Deploy workflow</p>
-          <p><span className="text-cyan-400">POST</span> /api/deploy</p>
-          <p className="text-zinc-400">{"{ repoUrl: 'github.com/you/app' }"}</p>
-          <p className="text-zinc-500 mt-4"># Response</p>
-          <p>{"{ status: 'started',"}</p>
-          <p>{"  publicUrl: 'https://abc123.e2b.dev',"}</p>
-          <p>{"  logsUrl: '/deployments/abc/logs' }"}</p>
+        <div className="rounded-2xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 p-8 font-mono text-sm space-y-2">
+          <p className="text-gray-400 dark:text-zinc-500"># Deploy workflow</p>
+          <p><span className="text-cyan-600 dark:text-cyan-400">POST</span> <span className="text-gray-800 dark:text-gray-200">/api/deploy</span></p>
+          <p className="text-gray-500 dark:text-zinc-400">{"{ repoUrl: 'github.com/you/app' }"}</p>
+          <p className="text-gray-400 dark:text-zinc-500 mt-4"># Response</p>
+          <p className="text-green-600 dark:text-green-400">{"{ status: 'started',"}</p>
+          <p className="text-green-600 dark:text-green-400">{"  publicUrl: 'https://abc123.e2b.dev',"}</p>
+          <p className="text-green-600 dark:text-green-400">{"  logsUrl: '/deployments/abc/logs' }"}</p>
         </div>
       </div>
     </section>
@@ -112,10 +112,10 @@ export function DocumentationSection() {
   ];
 
   return (
-    <section id="documentation" className="bg-black dark:bg-black text-white py-24 px-6">
+    <section id="documentation" className="bg-white dark:bg-zinc-950 text-gray-900 dark:text-white py-24 px-6">
       <div className="mx-auto max-w-7xl">
-        <p className="text-cyan-400 text-sm uppercase tracking-widest mb-3">Documentation</p>
-        <h2 className="text-4xl font-semibold tracking-tight mb-10">
+        <p className="text-cyan-600 dark:text-cyan-400 text-sm uppercase tracking-widest mb-3">Documentation</p>
+        <h2 className="text-4xl font-semibold tracking-tight mb-10 text-gray-900 dark:text-white">
           Guides & API reference
         </h2>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -123,10 +123,10 @@ export function DocumentationSection() {
             <Link
               key={d.title}
               href={d.href}
-              className="group rounded-2xl border border-white/10 bg-white/5 p-6 hover:bg-white/10 transition-colors"
+              className="group rounded-2xl border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 p-6 hover:bg-gray-100 dark:hover:bg-white/10 transition-colors"
             >
-              <h3 className="font-semibold mb-2 group-hover:text-cyan-400 transition-colors">{d.title}</h3>
-              <p className="text-sm text-zinc-400">{d.desc}</p>
+              <h3 className="font-semibold mb-2 text-gray-900 dark:text-white group-hover:text-cyan-600 dark:group-hover:text-cyan-400 transition-colors">{d.title}</h3>
+              <p className="text-sm text-gray-500 dark:text-zinc-400">{d.desc}</p>
             </Link>
           ))}
         </div>

@@ -431,13 +431,14 @@ export default function Page() {
           )}
 
           {/* History header */}
-          {scanRuns.length > 0 && (
-            <div className="mb-3">
-              <h2 className="text-sm font-semibold text-gray-700 dark:text-zinc-300 uppercase tracking-wide">
-                History <span className="ml-2 px-2 py-0.5 text-xs font-medium bg-gray-100 dark:bg-zinc-800 text-gray-500 dark:text-zinc-400 rounded-full">{scanRuns.length} run{scanRuns.length !== 1 ? "s" : ""}</span>
-              </h2>
-            </div>
-          )}
+          <div className="mb-3">
+            <h2 className="text-sm font-semibold text-gray-700 dark:text-zinc-300 uppercase tracking-wide">
+              History
+              {scanRuns.length > 0 && (
+                <span className="ml-2 px-2 py-0.5 text-xs font-medium bg-gray-100 dark:bg-zinc-800 text-gray-500 dark:text-zinc-400 rounded-full">{scanRuns.length} run{scanRuns.length !== 1 ? "s" : ""}</span>
+              )}
+            </h2>
+          </div>
 
           {/* Scan runs list */}
           <div className="space-y-3 mb-8">
@@ -549,13 +550,14 @@ export default function Page() {
       {tab === "agent" && (
         <>
           {/* History header */}
-          {agentRuns.length > 0 && (
-            <div className="mb-3">
-              <h2 className="text-sm font-semibold text-gray-700 dark:text-zinc-300 uppercase tracking-wide">
-                History <span className="ml-2 px-2 py-0.5 text-xs font-medium bg-gray-100 dark:bg-zinc-800 text-gray-500 dark:text-zinc-400 rounded-full">{agentRuns.length} run{agentRuns.length !== 1 ? "s" : ""}</span>
-              </h2>
-            </div>
-          )}
+          <div className="mb-3">
+            <h2 className="text-sm font-semibold text-gray-700 dark:text-zinc-300 uppercase tracking-wide">
+              History
+              {agentRuns.length > 0 && (
+                <span className="ml-2 px-2 py-0.5 text-xs font-medium bg-gray-100 dark:bg-zinc-800 text-gray-500 dark:text-zinc-400 rounded-full">{agentRuns.length} run{agentRuns.length !== 1 ? "s" : ""}</span>
+              )}
+            </h2>
+          </div>
 
           {/* Agent runs list */}
           <div className="space-y-3 mb-8">

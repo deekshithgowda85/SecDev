@@ -58,12 +58,12 @@ export function Navbar() {
           <ThemeToggle />
           {status === 'loading' ? null : session ? (
             <>
-              <Button variant="outline" size="default" asChild>
-                <Link href="/console/dashboard">Console</Link>
+              <Button size="default" asChild>
+                <Link href="/console/testing">Run Tests</Link>
               </Button>
               <Button
                 size="default"
-                variant="outline"
+                variant="ghost"
                 onClick={() => signOut({ callbackUrl: '/' })}
               >
                 Sign Out
@@ -119,10 +119,10 @@ export function Navbar() {
           <div className="flex flex-col gap-2">
             {session ? (
               <>
-                <Button variant="outline" className="w-full" asChild>
-                  <Link href="/console/dashboard" onClick={() => setOpen(false)}>Console</Link>
+                <Button className="w-full" asChild>
+                  <Link href="/console/testing" onClick={() => setOpen(false)}>Run Tests</Link>
                 </Button>
-                <Button className="w-full" onClick={() => { setOpen(false); signOut({ callbackUrl: '/' }); }}>
+                <Button variant="ghost" className="w-full" onClick={() => { setOpen(false); signOut({ callbackUrl: '/' }); }}>
                   Sign Out
                 </Button>
               </>

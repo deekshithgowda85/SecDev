@@ -6,7 +6,7 @@ import {
   Globe, Play, RefreshCw, CheckCircle2, XCircle, AlertTriangle,
   Loader2, ExternalLink, Shield, Code2, Zap, Sparkles, Square,
   BarChart3, Clock, Activity, ChevronRight, TestTube2, Eye,
-  FileText, ChevronDown, Terminal, Download, Copy, Check,
+  Download, Copy, Check,
 } from "lucide-react";
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -171,21 +171,9 @@ const LOG_COLORS: Record<string, string> = {
    SUB-COMPONENTS
    ═══════════════════════════════════════════════════════════════════════════ */
 
-/* ── progress bar ──────────────────────────────────────────────────────── */
-function ProgressBar({ pct, color }: { pct: number; color: string }) {
-  return (
-    <div className="w-full h-1.5 bg-gray-200 dark:bg-zinc-800 rounded-full overflow-hidden">
-      <div
-        className={`h-full ${color} rounded-full transition-[width] duration-700 ease-out`}
-        style={{ width: `${pct}%` }}
-      />
-    </div>
-  );
-}
-
 /* ── countdown / elapsed timer ─────────────────────────────────────────── */
 function ElapsedTimer({ startMs }: { startMs: number }) {
-  const [now, setNow] = useState(Date.now());
+  const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(t);
@@ -579,7 +567,8 @@ export default function Page() {
       if (d.ok) setRuns(d.runs ?? []);
     } catch { /* ignore */ }
   }, [selectedSandbox]);
-  useEffect(() => { fetchHistory(); }, [fetchHistory]);
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => { void fetchHistory(); }, [fetchHistory]);
 
   /* ── layer state helper ── */
   const setLayer = useCallback(

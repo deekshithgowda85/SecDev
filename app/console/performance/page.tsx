@@ -228,7 +228,7 @@ export default function Page() {
               <button
                 onClick={handleRun}
                 disabled={running}
-                className="flex items-center gap-2 px-5 py-2 text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 rounded-lg transition-colors disabled:opacity-60"
+                className="flex items-center gap-2 px-5 py-2 text-sm font-semibold text-white bg-gray-900 hover:bg-black dark:bg-white dark:hover:bg-zinc-100 dark:text-gray-900 active:opacity-90 rounded-lg transition-colors disabled:opacity-60"
               >
                 {running ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
                 {running ? "Starting…" : "Run Load Test"}
@@ -253,7 +253,7 @@ export default function Page() {
                   href={selectedDeployment.publicUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-1 text-indigo-600 dark:text-indigo-400 hover:underline font-mono truncate max-w-xs"
+                  className="flex items-center gap-1 text-gray-600 dark:text-zinc-400 hover:underline font-mono truncate max-w-xs"
                 >
                   {selectedDeployment.publicUrl} <ExternalLink className="w-3 h-3 shrink-0" />
                 </a>
@@ -329,7 +329,7 @@ export default function Page() {
             onClick={() => run.status === "completed" && fetchResults(run.id)}
             className={`p-4 rounded-xl border transition-all ${
               selectedRun === run.id
-                ? "border-emerald-300 dark:border-emerald-500/50 bg-emerald-50/50 dark:bg-emerald-500/5"
+                ? "border-gray-400 dark:border-zinc-500 bg-gray-50 dark:bg-zinc-800/50"
                 : "border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:border-gray-300 dark:hover:border-zinc-700"
             } ${run.status === "completed" ? "cursor-pointer" : ""}`}
           >
@@ -371,7 +371,7 @@ export default function Page() {
                     <button
                       onClick={(e) => { e.stopPropagation(); handleAnalyze(run.id); }}
                       disabled={analyzing}
-                      className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-purple-700 dark:text-purple-400 bg-purple-50 dark:bg-purple-500/10 border border-purple-200 dark:border-purple-500/20 rounded-lg hover:bg-purple-100 dark:hover:bg-purple-500/20 transition-colors disabled:opacity-50"
+                      className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-zinc-400 bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-700 transition-colors disabled:opacity-50"
                     >
                       <Sparkles className="w-3 h-3" /> AI Analyze
                     </button>
@@ -392,8 +392,8 @@ export default function Page() {
 
       {/* AI Analysis */}
       {analysis && (
-        <div className="mb-8 p-4 rounded-xl border border-purple-200 dark:border-purple-500/20 bg-purple-50/50 dark:bg-purple-500/5">
-          <h3 className="font-medium text-purple-700 dark:text-purple-400 flex items-center gap-2 mb-2">
+        <div className="mb-8 p-4 rounded-xl border border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-800/30">
+          <h3 className="font-medium text-gray-700 dark:text-zinc-300 flex items-center gap-2 mb-2">
             <Sparkles className="w-4 h-4" /> AI Performance Analysis
           </h3>
           <p className="text-sm text-gray-700 dark:text-zinc-300 whitespace-pre-wrap">{analysis}</p>

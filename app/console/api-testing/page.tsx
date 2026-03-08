@@ -288,7 +288,7 @@ export default function Page() {
         <button
           onClick={handleAiPlan}
           disabled={planLoading || !selectedSandbox}
-          className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-purple-600 hover:bg-purple-700 rounded-lg transition-colors disabled:opacity-60"
+          className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-gray-900 hover:bg-black dark:bg-white dark:hover:bg-zinc-100 dark:text-gray-900 rounded-lg transition-colors disabled:opacity-60"
         >
           {planLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <BotMessageSquare className="w-4 h-4" />}
           AI Security Plan
@@ -322,7 +322,7 @@ export default function Page() {
               <button
                 onClick={handleRun}
                 disabled={running}
-                className="flex items-center gap-2 px-5 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 active:bg-blue-800 rounded-lg transition-colors disabled:opacity-60"
+                className="flex items-center gap-2 px-5 py-2 text-sm font-semibold text-white bg-gray-900 hover:bg-black dark:bg-white dark:hover:bg-zinc-100 dark:text-gray-900 active:opacity-90 rounded-lg transition-colors disabled:opacity-60"
               >
                 {running ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
                 {running ? "Starting…" : "Run API Tests"}
@@ -347,7 +347,7 @@ export default function Page() {
                   href={selectedDeployment.publicUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-1 text-indigo-600 dark:text-indigo-400 hover:underline font-mono truncate max-w-xs"
+                  className="flex items-center gap-1 text-gray-600 dark:text-zinc-400 hover:underline font-mono truncate max-w-xs"
                 >
                   {selectedDeployment.publicUrl} <ExternalLink className="w-3 h-3 shrink-0" />
                 </a>
@@ -402,11 +402,11 @@ export default function Page() {
 
       {/* AI Security Plan Panel */}
       {plan && planOpen && (
-        <div className="mb-6 rounded-xl border border-purple-300 dark:border-purple-500/40 bg-purple-50 dark:bg-purple-500/5 overflow-hidden">
-          <div className="flex items-center gap-2 px-4 py-3 border-b border-purple-200 dark:border-purple-500/30">
-            <BotMessageSquare className="w-4 h-4 text-purple-600 dark:text-purple-400" />
-            <h3 className="text-sm font-semibold text-purple-700 dark:text-purple-400">AI Security Test Plan</h3>
-            <button onClick={() => setPlanOpen(false)} className="ml-auto text-xs text-purple-500 hover:text-purple-700">Dismiss</button>
+        <div className="mb-6 rounded-xl border border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-800/50 overflow-hidden">
+          <div className="flex items-center gap-2 px-4 py-3 border-b border-gray-200 dark:border-zinc-700">
+            <BotMessageSquare className="w-4 h-4 text-gray-600 dark:text-zinc-400" />
+            <h3 className="text-sm font-semibold text-gray-800 dark:text-zinc-200">AI Security Test Plan</h3>
+            <button onClick={() => setPlanOpen(false)} className="ml-auto text-xs text-gray-500 hover:text-gray-700 dark:text-zinc-400 dark:hover:text-zinc-200">Dismiss</button>
           </div>
           <div className="p-4 max-h-96 overflow-y-auto">
             <pre className="text-xs text-gray-700 dark:text-zinc-300 whitespace-pre-wrap font-mono leading-5">
@@ -442,7 +442,7 @@ export default function Page() {
             onClick={() => run.status === "completed" && fetchResults(run.id)}
             className={`p-4 rounded-xl border transition-all ${
               selectedRun === run.id
-                ? "border-blue-300 dark:border-blue-500/50 bg-blue-50/50 dark:bg-blue-500/5"
+                ? "border-gray-400 dark:border-zinc-500 bg-gray-50 dark:bg-zinc-800/50"
                 : "border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:border-gray-300 dark:hover:border-zinc-700"
             } ${run.status === "completed" ? "cursor-pointer" : ""}`}
           >
@@ -469,7 +469,7 @@ export default function Page() {
                   <>
                     <button
                       onClick={(e) => { e.stopPropagation(); setLiveRunId(run.id); setLogsOpen(true); }}
-                      className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/30 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-500/20 transition-colors"
+                      className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-zinc-400 bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-700 transition-colors"
                     >
                       <Terminal className="w-3 h-3" /> Logs
                     </button>
@@ -492,7 +492,7 @@ export default function Page() {
                     <button
                       onClick={(e) => { e.stopPropagation(); handleAnalyze(run.id); }}
                       disabled={analyzing}
-                      className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-purple-700 dark:text-purple-400 bg-purple-50 dark:bg-purple-500/10 border border-purple-200 dark:border-purple-500/20 rounded-lg hover:bg-purple-100 dark:hover:bg-purple-500/20 transition-colors disabled:opacity-50"
+                      className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-zinc-400 bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-700 transition-colors disabled:opacity-50"
                     >
                       <Sparkles className="w-3 h-3" /> AI Analyze
                     </button>
@@ -513,8 +513,8 @@ export default function Page() {
 
       {/* AI Analysis */}
       {analysis && (
-        <div className="mb-8 p-4 rounded-xl border border-purple-200 dark:border-purple-500/20 bg-purple-50/50 dark:bg-purple-500/5">
-          <h3 className="font-medium text-purple-700 dark:text-purple-400 flex items-center gap-2 mb-2">
+        <div className="mb-8 p-4 rounded-xl border border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-800/30">
+          <h3 className="font-medium text-gray-700 dark:text-zinc-300 flex items-center gap-2 mb-2">
             <Sparkles className="w-4 h-4" /> AI API Analysis
           </h3>
           <p className="text-sm text-gray-700 dark:text-zinc-300 whitespace-pre-wrap">{analysis}</p>
@@ -525,7 +525,7 @@ export default function Page() {
       {selectedRun && results.length > 0 && (
         <div className="rounded-xl border border-gray-200 dark:border-zinc-800 overflow-hidden">
           <div className="px-4 py-3 border-b border-gray-100 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-800/60 flex items-center gap-2">
-            <Zap className="w-4 h-4 text-blue-500" />
+            <Zap className="w-4 h-4 text-gray-500 dark:text-zinc-400" />
             <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Test Results</h3>
             <span className="ml-auto text-xs text-gray-500 dark:text-zinc-400">{results.length} requests</span>
           </div>

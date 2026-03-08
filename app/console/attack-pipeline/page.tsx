@@ -116,8 +116,8 @@ const RISK_BADGE: Record<string, string> = {
 const AGENT_BADGE: Record<string, string> = {
   "sql-injection": "bg-red-50 text-red-700 border-red-200 dark:bg-red-500/10 dark:text-red-400 dark:border-red-500/20",
   "auth-bypass":   "bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-500/10 dark:text-orange-400 dark:border-orange-500/20",
-  "injection":     "bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-500/10 dark:text-purple-400 dark:border-purple-500/20",
-  "parameter":     "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-500/20",
+  "injection":     "bg-gray-50 text-gray-700 border-gray-200 dark:bg-zinc-800 dark:text-zinc-400 dark:border-zinc-700",
+  "parameter":     "bg-gray-50 text-gray-700 border-gray-200 dark:bg-zinc-800 dark:text-zinc-400 dark:border-zinc-700",
   "headers":       "bg-gray-50 text-gray-700 border-gray-200 dark:bg-zinc-800 dark:text-zinc-400 dark:border-zinc-700",
 };
 
@@ -453,7 +453,7 @@ export default function AttackPipelinePage() {
                 </select>
                 {selectedDeployment && (
                   <a href={selectedDeployment.publicUrl} target="_blank" rel="noopener noreferrer"
-                    className="text-indigo-600 dark:text-indigo-400 hover:underline">
+                    className="text-gray-600 dark:text-zinc-400 hover:underline">
                     <ExternalLink className="w-4 h-4" />
                   </a>
                 )}
@@ -474,16 +474,16 @@ export default function AttackPipelinePage() {
         <div className="flex flex-wrap items-center gap-4">
           <label className="flex items-center gap-2 cursor-pointer">
             <input type="checkbox" checked={useAi} onChange={(e) => setUseAi(e.target.checked)}
-              className="w-4 h-4 rounded text-indigo-600" />
+              className="w-4 h-4 rounded accent-gray-900 dark:accent-white" />
             <span className="text-sm text-gray-700 dark:text-zinc-300 flex items-center gap-1">
-              <Sparkles className="w-3.5 h-3.5 text-purple-500" /> AI Analysis (Groq)
+              <Sparkles className="w-3.5 h-3.5 text-gray-500 dark:text-zinc-400" /> AI Analysis (Groq)
             </span>
           </label>
           <label className="flex items-center gap-2 cursor-pointer">
             <input type="checkbox" checked={includePerf} onChange={(e) => setIncludePerf(e.target.checked)}
-              className="w-4 h-4 rounded text-indigo-600" />
+              className="w-4 h-4 rounded accent-gray-900 dark:accent-white" />
             <span className="text-sm text-gray-700 dark:text-zinc-300 flex items-center gap-1">
-              <Activity className="w-3.5 h-3.5 text-blue-500" /> Performance Test
+              <Activity className="w-3.5 h-3.5 text-gray-500 dark:text-zinc-400" /> Performance Test
             </span>
           </label>
 
@@ -501,7 +501,7 @@ export default function AttackPipelinePage() {
             <button
               onClick={handleRun}
               disabled={!targetUrl}
-              className="flex items-center gap-2 px-5 py-2 text-sm font-semibold text-white bg-red-600 hover:bg-red-700 disabled:opacity-50 rounded-lg transition-colors"
+              className="flex items-center gap-2 px-5 py-2 text-sm font-semibold text-white bg-gray-900 hover:bg-black dark:bg-white dark:hover:bg-zinc-100 dark:text-gray-900 disabled:opacity-50 rounded-lg transition-colors"
             >
               <Play className="w-4 h-4" />
               Run Attack
@@ -575,8 +575,8 @@ export default function AttackPipelinePage() {
 
           {/* AI Analysis */}
           {report.aiAnalysis && (
-            <div className="p-4 rounded-xl border border-purple-200 dark:border-purple-500/20 bg-purple-50/50 dark:bg-purple-500/5">
-              <h3 className="font-semibold text-purple-700 dark:text-purple-400 flex items-center gap-2 mb-3">
+            <div className="p-4 rounded-xl border border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-800/30">
+              <h3 className="font-semibold text-gray-700 dark:text-zinc-300 flex items-center gap-2 mb-3">
                 <Sparkles className="w-4 h-4" /> AI Analysis
               </h3>
               <p className="text-sm text-gray-700 dark:text-zinc-300 mb-3">{report.aiAnalysis.summary}</p>

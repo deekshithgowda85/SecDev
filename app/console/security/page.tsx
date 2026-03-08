@@ -363,7 +363,7 @@ export default function Page() {
                 <button
                   onClick={handleRunScan}
                   disabled={scanning}
-                  className="flex items-center gap-2 px-5 py-2 text-sm font-semibold text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors disabled:opacity-60"
+                  className="flex items-center gap-2 px-5 py-2 text-sm font-semibold text-white bg-gray-900 hover:bg-black dark:bg-white dark:hover:bg-zinc-100 dark:text-gray-900 rounded-lg transition-colors disabled:opacity-60"
                 >
                   {scanning ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
                   {scanning ? "Startingâ€¦" : "Run Scan"}
@@ -372,7 +372,7 @@ export default function Page() {
                 <button
                   onClick={handleRunAgent}
                   disabled={agentRunning}
-                  className="flex items-center gap-2 px-5 py-2 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors disabled:opacity-60"
+                  className="flex items-center gap-2 px-5 py-2 text-sm font-semibold text-white bg-gray-900 hover:bg-black dark:bg-white dark:hover:bg-zinc-100 dark:text-gray-900 rounded-lg transition-colors disabled:opacity-60"
                 >
                   {agentRunning ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
                   {agentRunning ? "Startingâ€¦" : "Run Agent"}
@@ -397,7 +397,7 @@ export default function Page() {
                 </span>
                 <span className="text-gray-400">Â·</span>
                 <a href={selectedDeployment.publicUrl} target="_blank" rel="noopener noreferrer"
-                  className="flex items-center gap-1 text-indigo-600 dark:text-indigo-400 hover:underline font-mono truncate max-w-xs">
+                  className="flex items-center gap-1 text-gray-600 dark:text-zinc-400 hover:underline font-mono truncate max-w-xs">
                   {selectedDeployment.publicUrl} <ExternalLink className="w-3 h-3 shrink-0" />
                 </a>
                 <span className="text-gray-400">Â·</span>
@@ -611,7 +611,7 @@ export default function Page() {
           {/* Loading report */}
           {reportLoading && (
             <div className="flex items-center justify-center py-12">
-              <Loader2 className="w-6 h-6 animate-spin text-indigo-500" />
+              <Loader2 className="w-6 h-6 animate-spin text-gray-500 dark:text-zinc-400" />
               <span className="ml-2 text-sm text-gray-500 dark:text-zinc-400">Loading reportâ€¦</span>
             </div>
           )}
@@ -661,7 +661,7 @@ export default function Page() {
                       )}
                       {report.aiAnalysis.recommendations.length > 0 && (
                         <div>
-                          <p className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 uppercase mb-1">Recommendations</p>
+                          <p className="text-xs font-semibold text-gray-600 dark:text-zinc-400 uppercase mb-1">Recommendations</p>
                           <ul className="list-disc list-inside text-sm text-gray-700 dark:text-zinc-300 space-y-0.5">
                             {report.aiAnalysis.recommendations.map((r, i) => <li key={i}>{r}</li>)}
                           </ul>

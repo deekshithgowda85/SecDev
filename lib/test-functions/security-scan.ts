@@ -13,6 +13,7 @@ import { inngest } from "@/lib/inngest";
 import { getDb, ensureTables } from "@/lib/db";
 import { parseRoutes } from "@/lib/route-parser";
 import { getDeployment } from "@/lib/deployer";
+import { notifyScanStarted, notifyScanCompleted, notifyCritical } from "@/lib/email/notifications";
 
 const SECURITY_HEADERS = [
   { header: "content-security-policy", label: "CSP", severity: "high" },
@@ -31,6 +32,10 @@ export const runSecurityScan = inngest.createFunction(
 
     await step.run("init-db", async () => {
       await ensureTables();
+    });
+
+    await step.run("notify-start", async () => {
+      await notifyScanStarted({ runId, sandboxId, scanType: "Security Scan" });
     });
 
     const deployment = await step.run("get-deployment", async () => {
@@ -136,6 +141,30 @@ export const runSecurityScan = inngest.createFunction(
     await step.run("finalize", async () => {
       const sql = getDb();
       await sql`UPDATE test_runs SET status = 'completed', finished_at = ${Date.now()}, summary = ${summary} WHERE id = ${runId}`;
+    });
+
+    // Send critical alerts for each critical finding
+    await step.run("notify-criticals", async () => {
+      const criticals = findings.filter((f) => f.severity === "critical" && f.result === "fail");
+      for (const finding of criticals) {
+        await notifyCritical({
+          runId, sandboxId,
+          vulnerability: finding.checkType,
+          details: finding.details,
+          route: finding.route,
+        });
+      }
+    });
+
+    await step.run("notify-complete", async () => {
+      await notifyScanCompleted({
+        runId, sandboxId,
+        totalChecks: findings.length,
+        passed,
+        failed: findings.length - passed,
+        score: findings.length > 0 ? Math.round((passed / findings.length) * 100) : 0,
+        summary,
+      });
     });
 
     return { ok: true, summary, findings };

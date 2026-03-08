@@ -12,7 +12,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
-import { Facebook, Github, Linkedin, Moon, Send, Sun, Twitter } from "lucide-react"
+import { Github, Moon, Send, Sun } from "lucide-react"
 
 function Footerdemo() {
   const { theme, setTheme } = useTheme()
@@ -71,8 +71,8 @@ function Footerdemo() {
             <address className="space-y-2 text-sm not-italic">
               <p>Built for developers</p>
               <p>Powered by E2B & Inngest</p>
-              <p>Phone: (123) 456-7890</p>
-              <p>Email: hello@example.com</p>
+              <p>Phone: 8317346967</p>
+              <p>Email: manu.772110@gmail.com</p>
             </address>
           </div>
           <div className="relative">
@@ -81,52 +81,15 @@ function Footerdemo() {
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Button variant="outline" size="icon" className="rounded-full">
-                      <Facebook className="h-4 w-4" />
-                      <span className="sr-only">Facebook</span>
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Follow us on Facebook</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button variant="outline" size="icon" className="rounded-full">
-                      <Twitter className="h-4 w-4" />
-                      <span className="sr-only">Twitter</span>
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Follow us on Twitter</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button variant="outline" size="icon" className="rounded-full">
-                      <Github className="h-4 w-4" />
-                      <span className="sr-only">GitHub</span>
+                    <Button variant="outline" size="icon" className="rounded-full" asChild>
+                      <a href="https://github.com/deekshithgowda85/SecDev" target="_blank" rel="noopener noreferrer">
+                        <Github className="h-4 w-4" />
+                        <span className="sr-only">GitHub</span>
+                      </a>
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>
                     <p>Star us on GitHub</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button variant="outline" size="icon" className="rounded-full">
-                      <Linkedin className="h-4 w-4" />
-                      <span className="sr-only">LinkedIn</span>
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Connect with us on LinkedIn</p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
@@ -152,15 +115,15 @@ function Footerdemo() {
             © 2026 SecDev. All rights reserved.
           </p>
           <nav className="flex gap-4 text-sm">
-            <a href="#" className="transition-colors hover:text-primary">
+            <p className="transition-colors hover:text-primary">
               Privacy Policy
-            </a>
-            <a href="#" className="transition-colors hover:text-primary">
+            </p>
+            <p className="transition-colors hover:text-primary">
               Terms of Service
-            </a>
-            <a href="#" className="transition-colors hover:text-primary">
+            </p>
+            <p className="transition-colors hover:text-primary">
               Cookie Settings
-            </a>
+            </p>
           </nav>
         </div>
       </div>

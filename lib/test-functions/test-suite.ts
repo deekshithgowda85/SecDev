@@ -90,8 +90,21 @@ export const runTestSuite = inngest.createFunction(
 
     await step.run("notify-complete", async () => {
       const score = results.length > 0 ? Math.round((passed / results.length) * 100) : 0;
+      const sql = getDb();
+      let logs: Array<{ level: string; message: string }> = [];
+      try {
+        const logRows = await sql`
+          SELECT level, message FROM run_logs
+          WHERE run_id = ${runId}
+          ORDER BY id DESC LIMIT 30
+        `;
+        logs = logRows.reverse().map((r) => ({ level: String(r.level), message: String(r.message) }));
+      } catch { /* non-critical */ }
+      const errors = results
+        .filter((r) => r.status !== "pass")
+        .map((r) => r.error ? `${r.route}: ${r.error}` : `${r.route} (status ${r.statusCode})`);
       await notifyScanCompleted({
-        runId, sandboxId, totalChecks: results.length, passed, failed, score, summary,
+        runId, sandboxId, totalChecks: results.length, passed, failed, score, summary, logs, errors,
       });
     });
 

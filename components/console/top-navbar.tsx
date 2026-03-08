@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { Bell, Search, ChevronDown, LogOut, User, Settings, Sun, Moon, Github, Rocket } from "lucide-react";
 import { useTheme } from "next-themes";
@@ -10,6 +10,17 @@ export function ConsoleTopNav() {
   const [mounted, setMounted] = useState(false);
   const { theme, setTheme } = useTheme();
   const { data: session } = useSession();
+
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/notifications?unread=1")
+      .then((r) => r.json())
+      .then((d) => { if (!cancelled && d.ok) setUnreadCount(d.unreadCount ?? 0); })
+      .catch(() => null);
+    return () => { cancelled = true; };
+  }, []);
 
   React.useEffect(() => setMounted(true), []);
 
@@ -62,10 +73,18 @@ export function ConsoleTopNav() {
         )}
 
         {/* Notifications */}
-        <button className="relative w-8 h-8 flex items-center justify-center rounded-lg text-gray-500 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors">
+        <Link
+          href="/console/notifications"
+          className="relative w-8 h-8 flex items-center justify-center rounded-lg text-gray-500 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors"
+          aria-label="Notifications"
+        >
           <Bell className="w-4 h-4" />
-          <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-red-500" />
-        </button>
+          {unreadCount > 0 && (
+            <span className="absolute top-1 right-1 min-w-[14px] h-3.5 px-0.5 rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center leading-none">
+              {unreadCount > 99 ? "99+" : unreadCount}
+            </span>
+          )}
+        </Link>
 
         {/* User menu */}
         <div className="relative ml-1">

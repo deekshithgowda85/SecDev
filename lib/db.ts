@@ -240,6 +240,25 @@ export async function ensureTables(): Promise<void> {
       ON attack_pipeline_runs (user_id, created_at DESC)
   `;
 
+  // ── Notifications table ───────────────────────────────────────────────────
+  await sql`
+    CREATE TABLE IF NOT EXISTS notifications (
+      id         BIGSERIAL PRIMARY KEY,
+      user_id    TEXT    NOT NULL,
+      type       TEXT    NOT NULL DEFAULT 'info',
+      title      TEXT    NOT NULL,
+      message    TEXT    NOT NULL,
+      link       TEXT,
+      metadata   TEXT,
+      is_read    BOOLEAN NOT NULL DEFAULT false,
+      created_at BIGINT  NOT NULL
+    )
+  `;
+  await sql`
+    CREATE INDEX IF NOT EXISTS idx_notifications_user
+      ON notifications (user_id, created_at DESC)
+  `;
+
   tablesReady = true;
 }
 
@@ -259,4 +278,34 @@ export async function logRun(
       VALUES (${runId}, ${level}, ${message}, ${Date.now()})
     `;
   } catch { /* ignore — logs are best-effort */ }
+}
+
+/**
+ * Create a notification record for a user.
+ * Non-blocking — failures silently ignored.
+ */
+export async function createNotification(opts: {
+  userId: string;
+  type: "test_complete" | "test_failed" | "critical" | "vulnerability" | "info";
+  title: string;
+  message: string;
+  link?: string;
+  metadata?: Record<string, unknown>;
+}): Promise<void> {
+  try {
+    if (!opts.userId) return;
+    const sql = getDb();
+    await sql`
+      INSERT INTO notifications (user_id, type, title, message, link, metadata, created_at)
+      VALUES (
+        ${opts.userId},
+        ${opts.type},
+        ${opts.title},
+        ${opts.message},
+        ${opts.link ?? null},
+        ${opts.metadata ? JSON.stringify(opts.metadata) : null},
+        ${Date.now()}
+      )
+    `;
+  } catch { /* non-blocking */ }
 }

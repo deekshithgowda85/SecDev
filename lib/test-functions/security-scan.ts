@@ -157,13 +157,29 @@ export const runSecurityScan = inngest.createFunction(
     });
 
     await step.run("notify-complete", async () => {
+      const sql = getDb();
+      let logs: Array<{ level: string; message: string }> = [];
+      try {
+        const logRows = await sql`
+          SELECT level, message FROM run_logs
+          WHERE run_id = ${runId}
+          ORDER BY id DESC LIMIT 30
+        `;
+        logs = logRows.reverse().map((r) => ({ level: String(r.level), message: String(r.message) }));
+      } catch { /* non-critical */ }
+      const errors = findings
+        .filter((f) => f.result === "fail" && (f.severity === "critical" || f.severity === "high"))
+        .map((f) => `[${f.severity.toUpperCase()}] ${f.route}: ${f.details}`);
       await notifyScanCompleted({
-        runId, sandboxId,
+        runId,
+        sandboxId,
         totalChecks: findings.length,
         passed,
         failed: findings.length - passed,
         score: findings.length > 0 ? Math.round((passed / findings.length) * 100) : 0,
         summary,
+        logs,
+        errors,
       });
     });
 

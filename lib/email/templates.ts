@@ -131,11 +131,44 @@ export interface ScanCompletedParams {
   score?: number;
   summary?: string;
   reportUrl?: string;
+  logs?: Array<{ level: string; message: string }>;
+  errors?: string[];
+}
+
+function logLevelColor(level: string): string {
+  const l = level.toLowerCase();
+  if (l === "critical" || l === "error" || l === "fail" || l === "failed") return "#dc2626";
+  if (l === "warn" || l === "warning") return "#eab308";
+  if (l === "success" || l === "pass" || l === "passed") return "#16a34a";
+  if (l === "info" || l === "debug") return "#3b82f6";
+  return "#a1a1aa";
 }
 
 export function scanCompletedHtml(p: ScanCompletedParams): { subject: string; html: string } {
   const scoreColor = (p.score ?? 0) >= 80 ? "#16a34a" : (p.score ?? 0) >= 50 ? "#eab308" : "#dc2626";
   const subject = `✅ Scan Complete — ${p.projectName} (${p.passed}/${p.totalChecks} passed)`;
+
+  const errorsHtml = p.errors && p.errors.length > 0
+    ? `<div style="margin-top:12px;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:12px;">
+        <p style="font-size:11px;color:#dc2626;font-weight:700;margin:0 0 6px;font-family:monospace;">ERRORS (${p.errors.length})</p>
+        ${p.errors.map(e => `<p style="margin:2px 0;font-size:12px;color:#991b1b;font-family:monospace;">${esc(e)}</p>`).join("")}
+      </div>`
+    : "";
+
+  const logsHtml = p.logs && p.logs.length > 0
+    ? `<div style="margin-top:16px;">
+        <p style="font-size:11px;color:#71717a;font-family:monospace;text-transform:uppercase;letter-spacing:0.05em;margin:0 0 6px;">Run Logs (last ${p.logs.length})</p>
+        <div style="background:#18181b;border-radius:8px;padding:12px;overflow:hidden;">
+          ${p.logs.map(l =>
+            `<div style="display:flex;gap:10px;font-family:'Courier New',monospace;font-size:11px;line-height:1.6;padding:1px 0;">
+              <span style="color:${logLevelColor(l.level)};font-weight:700;min-width:52px;">${esc(l.level.toUpperCase())}</span>
+              <span style="color:#d4d4d8;">${esc(l.message)}</span>
+            </div>`
+          ).join("")}
+        </div>
+      </div>`
+    : "";
+
   const html = wrap(
     "Scan Completed",
     `<p style="font-size:14px;color:#52525b;line-height:1.6;">
@@ -157,6 +190,8 @@ export function scanCompletedHtml(p: ScanCompletedParams): { subject: string; ht
       row("Status", badge("#16a34a", "Completed"))
     ) +
     (p.summary ? `<p style="font-size:13px;color:#52525b;margin-top:12px;padding:12px;background:#f4f4f5;border-radius:8px;">${esc(p.summary)}</p>` : "") +
+    errorsHtml +
+    logsHtml +
     (p.reportUrl ? link(p.reportUrl, "View Detailed Report →") : ""),
   );
   return { subject, html };

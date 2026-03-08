@@ -6,6 +6,7 @@ import { inngest } from "@/lib/inngest";
 import { getDb, ensureTables } from "@/lib/db";
 import { parseRoutes } from "@/lib/route-parser";
 import { getDeployment } from "@/lib/deployer";
+import { notifyScanStarted, notifyScanCompleted } from "@/lib/email/notifications";
 
 export const runTestSuite = inngest.createFunction(
   { id: "run-test-suite", name: "Run Test Suite" },
@@ -15,6 +16,10 @@ export const runTestSuite = inngest.createFunction(
 
     await step.run("init-db", async () => {
       await ensureTables();
+    });
+
+    await step.run("notify-start", async () => {
+      await notifyScanStarted({ runId, sandboxId, scanType: "Route Health" });
     });
 
     // Get deployment info for the public URL
@@ -81,6 +86,13 @@ export const runTestSuite = inngest.createFunction(
     await step.run("finalize", async () => {
       const sql = getDb();
       await sql`UPDATE test_runs SET status = 'completed', finished_at = ${Date.now()}, summary = ${summary} WHERE id = ${runId}`;
+    });
+
+    await step.run("notify-complete", async () => {
+      const score = results.length > 0 ? Math.round((passed / results.length) * 100) : 0;
+      await notifyScanCompleted({
+        runId, sandboxId, totalChecks: results.length, passed, failed, score, summary,
+      });
     });
 
     return { ok: true, summary, results };

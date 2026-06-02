@@ -123,6 +123,12 @@ export default function Page() {
 
   const handleDelete = async (key: string) => {
     if (!project) return;
+    
+    // Safety check confirmation added here
+    if (!window.confirm(`Are you sure you want to delete the environment variable "${key}"? This action cannot be undone.`)) {
+      return;
+    }
+
     setDeletingKey(key);
     try {
       const res = await fetch("/api/env-vars", {
@@ -312,4 +318,3 @@ export default function Page() {
     </div>
   );
 }
-

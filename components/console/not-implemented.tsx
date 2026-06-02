@@ -1,3 +1,4 @@
+"use client";
 import { Construction, ArrowRight, Rocket, Github, BookOpen } from "lucide-react";
 import Link from "next/link";
 
@@ -51,7 +52,7 @@ export function NotImplemented({
             <ul className="space-y-2 w-full">
               {items.map((item, i) => (
                 <li
-                  key={i}
+                  key={`not-implemented-suggestion-${item}`}
                   className="flex items-center gap-2 text-sm text-gray-600 dark:text-zinc-400 bg-gray-50 dark:bg-zinc-800/50 rounded-lg px-4 py-2 border border-gray-100 dark:border-zinc-800"
                 >
                   {i === 0 ? <Rocket className="w-4 h-4 text-gray-400 shrink-0" /> :

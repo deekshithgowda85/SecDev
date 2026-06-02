@@ -161,10 +161,10 @@ const DEPLOY_DOT: Record<string, string> = {
 };
 
 const LOG_COLORS: Record<string, string> = {
-  info:    "text-blue-400",
+  info: "text-blue-400",
   success: "text-green-400",
-  warn:    "text-yellow-400",
-  error:   "text-red-400",
+  warn: "text-yellow-400",
+  error: "text-red-400",
 };
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -480,8 +480,8 @@ function StatusBadge({ status }: { status: string }) {
     s === "pass" || s === "skip"
       ? "bg-green-50 text-green-700 border-green-200 dark:bg-green-500/10 dark:text-green-400 dark:border-green-500/20"
       : s === "error" || s === "warn"
-      ? "bg-yellow-50 text-yellow-700 border-yellow-200 dark:bg-yellow-500/10 dark:text-yellow-400 dark:border-yellow-500/20"
-      : "bg-red-50 text-red-700 border-red-200 dark:bg-red-500/10 dark:text-red-400 dark:border-red-500/20";
+        ? "bg-yellow-50 text-yellow-700 border-yellow-200 dark:bg-yellow-500/10 dark:text-yellow-400 dark:border-yellow-500/20"
+        : "bg-red-50 text-red-700 border-red-200 dark:bg-red-500/10 dark:text-red-400 dark:border-red-500/20";
   const Ic = s === "pass" || s === "skip" ? CheckCircle2 : s === "error" || s === "warn" ? AlertTriangle : XCircle;
   return (
     <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium border ${cls}`}>
@@ -495,10 +495,10 @@ function SeverityBadge({ severity }: { severity: string }) {
   const s = severity.toLowerCase();
   const colors: Record<string, string> = {
     critical: "bg-red-100 text-red-800 dark:bg-red-500/20 dark:text-red-400",
-    high:     "bg-orange-100 text-orange-800 dark:bg-orange-500/20 dark:text-orange-400",
-    medium:   "bg-yellow-100 text-yellow-800 dark:bg-yellow-500/20 dark:text-yellow-400",
-    low:      "bg-blue-100 text-blue-800 dark:bg-blue-500/20 dark:text-blue-400",
-    info:     "bg-gray-100 text-gray-600 dark:bg-zinc-800 dark:text-zinc-400",
+    high: "bg-orange-100 text-orange-800 dark:bg-orange-500/20 dark:text-orange-400",
+    medium: "bg-yellow-100 text-yellow-800 dark:bg-yellow-500/20 dark:text-yellow-400",
+    low: "bg-blue-100 text-blue-800 dark:bg-blue-500/20 dark:text-blue-400",
+    info: "bg-gray-100 text-gray-600 dark:bg-zinc-800 dark:text-zinc-400",
   };
   return (
     <span className={`px-2 py-0.5 rounded-full text-[11px] font-medium ${colors[s] ?? colors.info}`}>
@@ -543,6 +543,21 @@ export default function Page() {
   const abortRef = useRef(false);
 
   const selectedDeployment = deployments.find((d) => d.sandboxId === selectedSandbox);
+
+  const [announcement, setAnnouncement] = useState("");
+  const announcementTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const announce = useCallback((message: string) => {
+    setAnnouncement("");
+
+    if (announcementTimeoutRef.current) {
+      clearTimeout(announcementTimeoutRef.current);
+    }
+
+    announcementTimeoutRef.current = setTimeout(() => {
+      setAnnouncement(message);
+    }, 50);
+  }, []);
 
   /* ── load deployments ── */
   useEffect(() => {
@@ -728,6 +743,40 @@ export default function Page() {
     URL.revokeObjectURL(url);
   };
 
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null;
+
+      const isTyping =
+        target instanceof HTMLInputElement ||
+        target instanceof HTMLTextAreaElement ||
+        target instanceof HTMLSelectElement ||
+        target?.isContentEditable;
+
+      if (isTyping) return;
+
+      const key = event.key.toLowerCase();
+
+      if (key === "r" && !running) {
+        event.preventDefault();
+        void handleRunAll();
+        announce("Test run started");
+      }
+
+      if (key === "s" && running) {
+        event.preventDefault();
+        handleStop();
+        announce("Test run stopped");
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [running, handleRunAll, handleStop, announce]);
+
   /* ── computed ── */
   const allResults = LAYERS.flatMap((l) => layerStates[l.id].results);
   const totalPassed = allResults.filter((r) => r.status === "pass" || r.result === "pass").length;
@@ -744,6 +793,13 @@ export default function Page() {
 
   return (
     <div className="max-w-6xl mx-auto">
+      <div
+        aria-live="polite"
+        aria-atomic="true"
+        className="sr-only"
+      >
+        {announcement}
+      </div>
       {/* ── header ───────────────────────────────────────────────────── */}
       <div className="mb-6 flex items-start justify-between gap-4 flex-wrap">
         <div>
@@ -813,6 +869,11 @@ export default function Page() {
                   <Square className="w-4 h-4 fill-current" /> Stop
                 </button>
               )}
+              <span className="text-xs text-gray-500 dark:text-zinc-500 whitespace-nowrap">
+                Shortcuts: <kbd className="px-1 py-0.5 rounded border">R</kbd> Run ·{" "}
+                <kbd className="px-1 py-0.5 rounded border">S</kbd> Stop
+              </span>
+
               <button
                 onClick={fetchHistory}
                 title="Refresh"
@@ -846,11 +907,10 @@ export default function Page() {
             <div>
               <p className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 uppercase tracking-widest mb-1">Overall Health Score</p>
               <div className="flex items-end gap-2">
-                <span className={`text-5xl font-black ${
-                  overallScore >= 80 ? "text-green-600 dark:text-green-400" :
+                <span className={`text-5xl font-black ${overallScore >= 80 ? "text-green-600 dark:text-green-400" :
                   overallScore >= 50 ? "text-yellow-600 dark:text-yellow-400" :
-                  "text-red-600 dark:text-red-400"
-                }`}>{overallScore}</span>
+                    "text-red-600 dark:text-red-400"
+                  }`}>{overallScore}</span>
                 <span className="text-xl text-gray-400 mb-1">/100</span>
               </div>
               <p className="text-sm text-indigo-600 dark:text-indigo-400 mt-1">
@@ -936,13 +996,12 @@ export default function Page() {
                   </div>
                   {/* Label + status */}
                   <div className="text-center px-1">
-                    <p className={`text-xs font-semibold leading-tight ${
-                      isActive ? layer.text :
+                    <p className={`text-xs font-semibold leading-tight ${isActive ? layer.text :
                       isCompleted ? "text-green-500 dark:text-green-400" :
-                      isFailed ? "text-red-500" :
-                      isSelected ? "text-gray-800 dark:text-zinc-100" :
-                      "text-gray-400 dark:text-zinc-600"
-                    }`}>{layer.label}</p>
+                        isFailed ? "text-red-500" :
+                          isSelected ? "text-gray-800 dark:text-zinc-100" :
+                            "text-gray-400 dark:text-zinc-600"
+                      }`}>{layer.label}</p>
                     <p className="text-[10px] mt-0.5 h-4">
                       {st.phase === "idle" && <span className="text-gray-300 dark:text-zinc-700">Queued</span>}
                       {isActive && <span className="text-yellow-500 animate-pulse">Running…</span>}
@@ -955,11 +1014,10 @@ export default function Page() {
                 {!isLast && (
                   <div className="flex items-center mt-7 w-8 sm:w-12 shrink-0 px-1">
                     <div className="relative h-0.5 w-full bg-gray-200 dark:bg-zinc-800 rounded-full overflow-hidden">
-                      <div className={`absolute inset-y-0 left-0 rounded-full transition-[width] duration-1000 ease-out ${
-                        isCompleted ? "w-full bg-green-500" :
+                      <div className={`absolute inset-y-0 left-0 rounded-full transition-[width] duration-1000 ease-out ${isCompleted ? "w-full bg-green-500" :
                         isFailed ? "w-full bg-red-500" :
-                        isActive ? `w-1/2 ${layer.bar}` : "w-0"
-                      }`} />
+                          isActive ? `w-1/2 ${layer.bar}` : "w-0"
+                        }`} />
                     </div>
                   </div>
                 )}
@@ -1079,7 +1137,7 @@ export default function Page() {
                 <div className="flex items-center gap-3">
                   {run.status === "running" ? <Loader2 className="w-4 h-4 text-yellow-500 animate-spin shrink-0" />
                     : run.status === "completed" ? <CheckCircle2 className="w-4 h-4 text-green-500 shrink-0" />
-                    : <XCircle className="w-4 h-4 text-red-500 shrink-0" />}
+                      : <XCircle className="w-4 h-4 text-red-500 shrink-0" />}
                   <div>
                     <p className="text-sm font-medium text-gray-900 dark:text-white">
                       {run.type} — {new Date(run.createdAt).toLocaleString()}
@@ -1089,11 +1147,10 @@ export default function Page() {
                     </p>
                   </div>
                 </div>
-                <span className={`shrink-0 px-2 py-1 text-xs font-medium rounded-md border ${
-                  run.status === "running" ? "bg-yellow-50 text-yellow-700 border-yellow-200 dark:bg-yellow-500/10 dark:text-yellow-400 dark:border-yellow-500/20"
-                    : run.status === "completed" ? "bg-green-50 text-green-700 border-green-200 dark:bg-green-500/10 dark:text-green-400 dark:border-green-500/20"
+                <span className={`shrink-0 px-2 py-1 text-xs font-medium rounded-md border ${run.status === "running" ? "bg-yellow-50 text-yellow-700 border-yellow-200 dark:bg-yellow-500/10 dark:text-yellow-400 dark:border-yellow-500/20"
+                  : run.status === "completed" ? "bg-green-50 text-green-700 border-green-200 dark:bg-green-500/10 dark:text-green-400 dark:border-green-500/20"
                     : "bg-red-50 text-red-700 border-red-200 dark:bg-red-500/10 dark:text-red-400 dark:border-red-500/20"
-                }`}>
+                  }`}>
                   {run.status}
                 </span>
               </div>

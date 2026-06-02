@@ -46,6 +46,7 @@ export function ConsoleTopNav() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 dark:text-zinc-500" />
           <input
             type="text"
+            aria-label="Search console"
             placeholder="Search..."
             className="w-full bg-gray-100 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-lg pl-8 pr-3 py-1.5 text-sm text-gray-800 dark:text-zinc-300 placeholder:text-gray-400 dark:placeholder:text-zinc-600 focus:outline-none focus:border-gray-500 dark:focus:border-zinc-400 transition-colors"
           />

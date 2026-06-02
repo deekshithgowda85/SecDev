@@ -259,6 +259,44 @@ export async function ensureTables(): Promise<void> {
       ON notifications (user_id, created_at DESC)
   `;
 
+  // ── pgvector extension ────────────────────────────────────────────────────
+  // Requires pgvector installed on your Neon project (available by default).
+  await sql`CREATE EXTENSION IF NOT EXISTS vector`;
+
+  // ── Log vector index table ────────────────────────────────────────────────
+  // Stores chunked log text + 1536-dim OpenAI embeddings for semantic search.
+  await sql`
+    CREATE TABLE IF NOT EXISTS deployment_log_vectors (
+      id            BIGSERIAL PRIMARY KEY,
+      sandbox_id    TEXT      NOT NULL,
+      user_id       TEXT      NOT NULL DEFAULT '',
+      log_id_start  BIGINT    NOT NULL,
+      log_id_end    BIGINT    NOT NULL,
+      chunk_text    TEXT      NOT NULL,
+      embedding     vector(1024),
+      created_at    BIGINT    NOT NULL,
+      expires_at    BIGINT    NOT NULL
+    )
+  `;
+
+  await sql`
+    CREATE INDEX IF NOT EXISTS idx_log_vectors_sandbox
+      ON deployment_log_vectors (sandbox_id)
+  `;
+
+  // HNSW index for fast approximate nearest-neighbour search
+  await sql`
+    CREATE INDEX IF NOT EXISTS idx_log_vectors_embedding
+      ON deployment_log_vectors
+      USING hnsw (embedding vector_cosine_ops)
+  `;
+
+  // Index to speed up the retention-pruning query
+  await sql`
+    CREATE INDEX IF NOT EXISTS idx_log_vectors_expires
+      ON deployment_log_vectors (expires_at)
+  `;
+
   tablesReady = true;
 }
 
@@ -308,4 +346,126 @@ export async function createNotification(opts: {
       )
     `;
   } catch { /* non-blocking */ }
+}
+
+// ── pgvector helpers ──────────────────────────────────────────────────────────
+
+export interface LogVector {
+  id: number;
+  sandboxId: string;
+  userId: string;
+  logIdStart: number;
+  logIdEnd: number;
+  chunkText: string;
+  createdAt: number;
+}
+
+/**
+ * Insert a pre-computed embedding chunk into deployment_log_vectors.
+ * Called by the background indexer — not by API routes directly.
+ */
+export async function insertLogVector(opts: {
+  sandboxId: string;
+  userId: string;
+  logIdStart: number;
+  logIdEnd: number;
+  chunkText: string;
+  embedding: number[];
+  /** TTL in milliseconds from now — defaults to 30 days */
+  ttlMs?: number;
+}): Promise<void> {
+  const sql = getDb();
+  const expiresAt = Date.now() + (opts.ttlMs ?? 30 * 24 * 60 * 60 * 1000);
+  await sql`
+    INSERT INTO deployment_log_vectors
+      (sandbox_id, user_id, log_id_start, log_id_end,
+       chunk_text, embedding, created_at, expires_at)
+    VALUES (
+      ${opts.sandboxId},
+      ${opts.userId},
+      ${opts.logIdStart},
+      ${opts.logIdEnd},
+      ${opts.chunkText},
+      ${JSON.stringify(opts.embedding)}::vector,
+      ${Date.now()},
+      ${expiresAt}
+    )
+  `;
+}
+
+/**
+ * Semantic nearest-neighbour search over deployment_log_vectors.
+ * Returns up to `limit` chunks ranked by cosine similarity.
+ */
+export async function searchLogVectors(opts: {
+  userId: string;
+  queryEmbedding: number[];
+  sandboxId?: string;
+  limit?: number;
+}): Promise<LogVector[]> {
+  const sql = getDb();
+  const limit = opts.limit ?? 10;
+  const vec = JSON.stringify(opts.queryEmbedding);
+
+  let rows;
+  if (opts.sandboxId) {
+    rows = await sql`
+      SELECT id, sandbox_id, user_id, log_id_start, log_id_end,
+             chunk_text, created_at
+      FROM   deployment_log_vectors
+      WHERE  user_id    = ${opts.userId}
+        AND  sandbox_id = ${opts.sandboxId}
+        AND  expires_at > ${Date.now()}
+      ORDER BY embedding <=> ${vec}::vector
+      LIMIT  ${limit}
+    `;
+  } else {
+    rows = await sql`
+      SELECT id, sandbox_id, user_id, log_id_start, log_id_end,
+             chunk_text, created_at
+      FROM   deployment_log_vectors
+      WHERE  user_id    = ${opts.userId}
+        AND  expires_at > ${Date.now()}
+      ORDER BY embedding <=> ${vec}::vector
+      LIMIT  ${limit}
+    `;
+  }
+
+  return rows.map((r) => ({
+    id: Number(r.id),
+    sandboxId: r.sandbox_id,
+    userId: r.user_id,
+    logIdStart: Number(r.log_id_start),
+    logIdEnd: Number(r.log_id_end),
+    chunkText: r.chunk_text,
+    createdAt: Number(r.created_at),
+  }));
+}
+
+/**
+ * Delete expired log vectors (retention policy).
+ * Run periodically from the Inngest indexer or a cron route.
+ */
+export async function pruneExpiredLogVectors(): Promise<number> {
+  const sql = getDb();
+  const result = await sql`
+    DELETE FROM deployment_log_vectors
+    WHERE expires_at < ${Date.now()}
+    RETURNING id
+  `;
+  return result.length;
+}
+
+/**
+ * Returns the highest log id already indexed for a given sandbox,
+ * so the indexer knows where to resume.
+ */
+export async function getLastIndexedLogId(sandboxId: string): Promise<number> {
+  const sql = getDb();
+  const rows = await sql`
+    SELECT COALESCE(MAX(log_id_end), 0) AS last_id
+    FROM   deployment_log_vectors
+    WHERE  sandbox_id = ${sandboxId}
+  `;
+  return Number(rows[0]?.last_id ?? 0);
 }

@@ -15,6 +15,7 @@ type UserRow = {
 
 export type UserProfile = {
   id: string;
+  name?: string | null;
   email: string;
   createdAt: number;
 };

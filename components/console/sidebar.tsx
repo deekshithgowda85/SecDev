@@ -97,53 +97,58 @@ export function ConsoleSidebar() {
 
       {/* Nav groups */}
       <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-0.5">
-        {navGroups.map((group) => (
-          <div key={group.title} className="mb-1">
-            {!collapsed && (
-              <button
-                type="button"
-                onClick={() => toggleGroup(group.title)}
-                aria-expanded={!collapsedGroups[group.title]}
-                aria-controls={`group-${group.title}`}
-                aria-label={`${group.title} section toggle`}
-                className="flex items-center justify-between w-full text-left px-2 py-1 text-[10px] font-semibold text-gray-400 uppercase tracking-widest hover:text-gray-600"
-              >
-                <span>{group.title}</span>
-                {collapsedGroups[group.title] ? (
-                  <ChevronDown className="w-3 h-3" />
-                ) : (
-                  <ChevronUp className="w-3 h-3" />
-                )}
-              </button>
-            )}
-            {!collapsedGroups[group.title] && (
-              <div
-                id={`group-${group.title}`}
-                className="space-y-0.5 mt-0.5"
-              >
-                {group.items.map((item) => {
-                  const isActive =
-                    pathname === item.href || pathname.startsWith(item.href + "/");
-                  const Icon = item.icon;
-                  return (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      title={collapsed ? item.label : undefined}
-                      className={`flex items-center gap-2.5 px-2 py-2 rounded-lg text-sm transition-colors ${isActive
-                        ? "bg-gray-900 text-white dark:bg-white dark:text-gray-900 font-medium"
-                        : "text-gray-600 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-zinc-200 hover:bg-gray-100 dark:hover:bg-zinc-800"
-                        } ${collapsed ? "justify-center" : ""}`}
-                    >
-                      <Icon className="w-4 h-4 shrink-0" />
-                      {!collapsed && <span>{item.label}</span>}
-                    </Link>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        ))}
+        {navGroups.map((group) => {
+          // Create a valid, lowercase, hyphenated slug representation of the title string
+          const groupSlug = group.title.toLowerCase().replace(/\s+/g, "-");
+
+          return (
+            <div key={group.title} className="mb-1">
+              {!collapsed && (
+                <button
+                  type="button"
+                  onClick={() => toggleGroup(group.title)}
+                  aria-expanded={!collapsedGroups[group.title]}
+                  aria-controls={`group-${groupSlug}`}
+                  aria-label={`${group.title} section toggle`}
+                  className="flex items-center justify-between w-full text-left px-2 py-1 text-[10px] font-semibold text-gray-400 uppercase tracking-widest hover:text-gray-600"
+                >
+                  <span>{group.title}</span>
+                  {collapsedGroups[group.title] ? (
+                    <ChevronDown className="w-3 h-3" />
+                  ) : (
+                    <ChevronUp className="w-3 h-3" />
+                  )}
+                </button>
+              )}
+              {!collapsedGroups[group.title] && (
+                <div
+                  id={`group-${groupSlug}`}
+                  className="space-y-0.5 mt-0.5"
+                >
+                  {group.items.map((item) => {
+                    const isActive =
+                      pathname === item.href || pathname.startsWith(item.href + "/");
+                    const Icon = item.icon;
+                    return (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        title={collapsed ? item.label : undefined}
+                        className={`flex items-center gap-2.5 px-2 py-2 rounded-lg text-sm transition-colors ${isActive
+                          ? "bg-gray-900 text-white dark:bg-white dark:text-gray-900 font-medium"
+                          : "text-gray-600 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-zinc-200 hover:bg-gray-100 dark:hover:bg-zinc-800"
+                          } ${collapsed ? "justify-center" : ""}`}
+                      >
+                        <Icon className="w-4 h-4 shrink-0" />
+                        {!collapsed && <span>{item.label}</span>}
+                      </Link>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          );
+        })}
       </nav>
 
       {/* Collapse toggle */}

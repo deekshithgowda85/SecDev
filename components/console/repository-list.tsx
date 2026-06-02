@@ -214,6 +214,8 @@ export function RepositoryList({
         </p>
         <p className="text-sm text-gray-500 dark:text-zinc-400 mb-6 max-w-sm leading-relaxed">
           Link your GitHub profile to instantly fetch your repositories, inspect codebases, and enable one-click environment deployments.
+        <p className="text-xs text-gray-500 dark:text-zinc-500 mb-4 max-w-xs">
+          Connect GitHub to access your repositories and deploy both public and private projects from your account.
         </p>
         <button
           type="button"
@@ -236,9 +238,10 @@ export function RepositoryList({
         <div
           className={`flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-medium border shadow-sm transition-all ${
             deployMsg.ok
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm border ${deployMsg.ok
               ? "bg-green-50 dark:bg-green-500/10 border-green-200 dark:border-green-500/20 text-green-700 dark:text-green-400"
               : "bg-red-50 dark:bg-red-500/10 border-red-200 dark:border-red-500/20 text-red-700 dark:text-red-400"
-          }`}
+            }`}
         >
           {deployMsg.msg}
           {deployMsg.url && (
@@ -278,6 +281,38 @@ export function RepositoryList({
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as SortOption)}
                 className="appearance-none bg-gray-50 dark:bg-zinc-800/50 border border-gray-200 dark:border-zinc-700 rounded-lg pl-8 pr-8 py-2 text-sm font-medium text-gray-700 dark:text-zinc-300 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all cursor-pointer"
+
+        <div className="flex items-center gap-3">
+          <input
+            type="text"
+            aria-label="Search repositories"
+            placeholder="Search repositories…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="flex-1 max-w-xs bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-zinc-500 focus:outline-none focus:border-gray-500 dark:focus:border-zinc-400 transition-colors"
+          />
+          <span className="text-xs text-gray-500 dark:text-zinc-500 ml-auto">
+            {loading ? "Loading…" : `${filtered.length} repos`}
+          </span>
+          {showViewToggle && (
+            <div className="flex items-center gap-1 p-1 bg-gray-100 dark:bg-zinc-800 rounded-lg">
+              <button
+                onClick={() => setView("table")}
+                className={`p-1.5 rounded-md transition-colors ${view === "table"
+                    ? "bg-white dark:bg-zinc-700 text-gray-900 dark:text-white shadow-sm"
+                    : "text-gray-400 dark:text-zinc-500 hover:text-gray-700 dark:hover:text-zinc-300"
+                  }`}
+                title="Table view"
+              >
+                <List className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => setView("grid")}
+                className={`p-1.5 rounded-md transition-colors ${view === "grid"
+                    ? "bg-white dark:bg-zinc-700 text-gray-900 dark:text-white shadow-sm"
+                    : "text-gray-400 dark:text-zinc-500 hover:text-gray-700 dark:hover:text-zinc-300"
+                  }`}
+                title="Grid view"
               >
                 <option value="updated">Recently Updated</option>
                 <option value="name">Alphabetical</option>
@@ -332,7 +367,9 @@ export function RepositoryList({
       {loading && (
         view === "grid" ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)}
+            {Array.from({ length: 6 }).map((_, i) => (
+              <SkeletonCard key={`repo-skeleton-card-${i}`} />
+            ))}
           </div>
         ) : (
           <div className="overflow-x-auto rounded-xl border border-gray-200 dark:border-zinc-800 shadow-sm">
@@ -347,7 +384,9 @@ export function RepositoryList({
                 </tr>
               </thead>
               <tbody className="bg-white dark:bg-zinc-900">
-                {Array.from({ length: 6 }).map((_, i) => <SkeletonRow key={i} />)}
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <SkeletonRow key={`repo-skeleton-row-${i}`} />
+                ))}
               </tbody>
             </table>
           </div>

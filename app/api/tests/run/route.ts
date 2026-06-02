@@ -12,7 +12,7 @@ import { getDb, ensureTables } from "@/lib/db";
 import { randomBytes } from "node:crypto";
 import { auth } from "@/lib/auth";
 
-const EVENT_MAP: Record<string, string> = {
+const EVENT_MAP: Record<string, "test/suite.run" | "test/security.run" | "test/api.run" | "test/performance.run" | "test/vibetest.run"> = {
   suite: "test/suite.run",
   security: "test/security.run",
   api: "test/api.run",

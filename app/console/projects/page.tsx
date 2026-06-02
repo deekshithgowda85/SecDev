@@ -10,7 +10,7 @@ export default function ProjectsPage() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Projects</h1>
           <p className="text-sm text-gray-500 dark:text-zinc-500 mt-0.5">
-            Your GitHub repositories — each repo is a deployable project
+            Deploy GitHub repositories as projects. Public and private repositories are supported after connecting GitHub.
           </p>
         </div>
         <Link

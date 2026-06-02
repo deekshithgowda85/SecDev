@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Github, User, Lock, ShieldAlert, Camera, Check, Eye, EyeOff } from "lucide-react";
-import { signIn } from "next-auth/react";
+import { signIn, signOut } from "next-auth/react";
 import type { UserProfile } from "@/lib/user-auth";
 
 function Section({ title, icon, children }: { title: string; icon: React.ReactNode; children: React.ReactNode }) {
@@ -37,11 +37,23 @@ function formatCreatedAt(createdAt: number): string {
 }
 
 export function AccountPageClient({ user, hasGithubConnection }: { user: UserProfile | null; hasGithubConnection: boolean }) {
+  const [displayName, setDisplayName] = useState(user?.name ?? user?.email?.split("@")[0] ?? "");
+  const [username, setUsername] = useState(user?.id ?? "");
   const [showOld, setShowOld] = useState(false);
   const [showNew, setShowNew] = useState(false);
   const [deleteInput, setDeleteInput] = useState("");
   const [profileSaved, setProfileSaved] = useState(false);
   const [pwSaved, setPwSaved] = useState(false);
+  
+  // Account destruction state handlers
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  // Dynamic Session Management State (Fixes #44)
+  const [sessions, setSessions] = useState([
+    { id: "chrome-macos", device: "Chrome on macOS", loc: "Bengaluru, IN", current: true },
+    { id: "vscode-ext", device: "VS Code Extension", loc: "Bengaluru, IN", current: false },
+  ]);
 
   const saveProfile = () => {
     setProfileSaved(true);
@@ -53,12 +65,70 @@ export function AccountPageClient({ user, hasGithubConnection }: { user: UserPro
     setTimeout(() => setPwSaved(false), 2000);
   };
 
+  const handleRevokeSession = async (id: string, device: string) => {
+    if (!window.confirm(`Are you sure you want to terminate your active session on "${device}"?`)) {
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/user/sessions?id=${encodeURIComponent(id)}`, {
+        method: "DELETE",
+      });
+      
+      const data = await res.json();
+      if (res.ok && data.ok) {
+        setSessions((prev) => prev.filter((s) => s.id !== id));
+      } else {
+        alert(data.error ?? "Failed to revoke active session.");
+      }
+    } catch {
+      alert("Network error occurred while trying to terminate connection session.");
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    if (deleteInput !== "delete my account") return;
+
+    const doubleConfirm = window.confirm(
+      "CRITICAL WARNING: Are you completely sure you want to delete your account? This will instantly purge all sandboxes, deployments, security logs, and custom configuration secrets permanently."
+    );
+    if (!doubleConfirm) return;
+
+    setDeleting(true);
+    setDeleteError(null);
+
+    try {
+      const res = await fetch("/api/user/account", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+      });
+      const data = await res.json();
+
+      if (res.ok && data.ok) {
+        alert("Your account has been successfully deleted. Goodbye!");
+        signOut({ callbackUrl: "/" });
+      } else {
+        setDeleteError(data.error ?? "Failed to delete account. Please try again.");
+      }
+    } catch {
+      setDeleteError("Network error occurred. Unable to connect to authentication server.");
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   return (
     <div className="mx-auto max-w-2xl space-y-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Account</h1>
           <p className="mt-0.5 text-sm text-gray-500 dark:text-zinc-500">Manage your profile and security settings</p>
         </div>
+
+        {deleteError && (
+          <div className="px-4 py-3 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded-xl text-sm text-red-700 dark:text-red-400">
+            {deleteError}
+          </div>
+        )}
 
         <Section title="Profile" icon={<User className="h-4 w-4" />}>
           <div className="space-y-5">
@@ -79,39 +149,47 @@ export function AccountPageClient({ user, hasGithubConnection }: { user: UserPro
               </div>
             )}
 
+            {/* Fixed Avatar Element: Semantic button wrapper with keyboard focus accessibility */}
             <div className="flex items-center gap-4">
-              <div className="group relative cursor-pointer">
+              <button
+                type="button"
+                aria-label="Change account avatar"
+                className="group relative focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-white rounded-full transition-shadow"
+              >
                 <div className="flex h-16 w-16 select-none items-center justify-center rounded-full bg-gray-900 text-2xl font-bold text-white dark:bg-white dark:text-gray-900">
                   {user?.email?.[0]?.toUpperCase() ?? "U"}
                 </div>
-                <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
+                <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/40 opacity-0 transition-opacity group-hover:opacity-100 group-focus:opacity-100">
                   <Camera className="h-5 w-5 text-white" />
                 </div>
-              </div>
+              </button>
               <div>
                 <p className="text-sm font-medium text-gray-800 dark:text-zinc-200">Account Avatar</p>
-                <p className="text-xs text-gray-500 dark:text-zinc-500">Use a generic avatar for privacy.</p>
+                <p className="text-xs text-gray-500 dark:text-zinc-500">Click avatar badge to update graphics controls.</p>
               </div>
             </div>
 
             <Field label="Display Name">
               <input
-                value={user?.email?.split("@")[0] ?? ""}
-                readOnly
+                value={displayName}
+                onChange={(e) => setDisplayName(e.target.value)}
+                placeholder="Enter your display name"
                 className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-900 transition-colors focus:border-gray-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:focus:border-zinc-400"
               />
             </Field>
             <Field label="Email Address">
               <input
                 value={user?.email ?? ""}
+                placeholder="Email managed by provider"
                 readOnly
                 className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-900 transition-colors focus:border-gray-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:focus:border-zinc-400"
               />
             </Field>
-            <Field label="User ID">
+            <Field label="Username">
               <input
-                value={user?.id ?? ""}
-                readOnly
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="Enter your username"
                 className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-900 transition-colors focus:border-gray-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:focus:border-zinc-400"
               />
             </Field>
@@ -186,11 +264,8 @@ export function AccountPageClient({ user, hasGithubConnection }: { user: UserPro
 
         <Section title="Active Sessions" icon={<Lock className="h-4 w-4" />}>
           <div className="space-y-3">
-            {[
-              { device: "Chrome on macOS", loc: "Bengaluru, IN", current: true },
-              { device: "VS Code Extension", loc: "Bengaluru, IN", current: false },
-            ].map((s) => (
-              <div key={s.device} className="flex items-center justify-between rounded-lg bg-gray-50 p-3 dark:bg-zinc-800">
+            {sessions.map((s) => (
+              <div key={s.id} className="flex items-center justify-between rounded-lg bg-gray-50 p-3 dark:bg-zinc-800">
                 <div>
                   <p className="text-sm font-medium text-gray-800 dark:text-zinc-200">{s.device}</p>
                   <p className="text-xs text-gray-500 dark:text-zinc-500">{s.loc}</p>
@@ -200,7 +275,12 @@ export function AccountPageClient({ user, hasGithubConnection }: { user: UserPro
                     Current
                   </span>
                 ) : (
-                  <button className="text-xs text-red-500 transition-colors hover:text-red-600">Revoke</button>
+                  <button 
+                    onClick={() => handleRevokeSession(s.id, s.device)}
+                    className="text-xs text-red-500 transition-colors hover:text-red-600 font-semibold"
+                  >
+                    Revoke
+                  </button>
                 )}
               </div>
             ))}
@@ -224,14 +304,15 @@ export function AccountPageClient({ user, hasGithubConnection }: { user: UserPro
             />
           </Field>
           <button
-            disabled={deleteInput !== "delete my account"}
+            onClick={handleDeleteAccount}
+            disabled={deleteInput !== "delete my account" || deleting}
             className={`mt-4 rounded-lg px-5 py-2 text-sm font-medium transition-colors ${
-              deleteInput === "delete my account"
+              deleteInput === "delete my account" && !deleting
                 ? "bg-red-600 text-white hover:bg-red-500"
                 : "cursor-not-allowed bg-gray-100 text-gray-400 dark:bg-zinc-800 dark:text-zinc-600"
             }`}
           >
-            Delete My Account
+            {deleting ? "Deleting Account..." : "Delete My Account"}
           </button>
         </div>
     </div>

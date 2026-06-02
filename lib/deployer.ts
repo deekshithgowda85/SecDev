@@ -1,5 +1,6 @@
 import { Sandbox } from "e2b";
 import { getDb, ensureTables } from "./db";
+import { inngest } from "./inngest";
 
 // Custom template: Node 20 + git + pnpm + serve pre-installed (qg1v6gyvxew6q52r04lp)
 const E2B_TEMPLATE = process.env.E2B_TEMPLATE ?? "secdev-web-runtime";
@@ -177,7 +178,7 @@ export async function startDeployment(
   `;
 
   // Fire-and-forget background deployment pipeline
-  runDeploymentPipeline(sandbox, sandboxId, repoName, publicUrl, repoUrl, branch, options?.envVars)
+  runDeploymentPipeline(sandbox, sandboxId, repoName, publicUrl, repoUrl, branch, userId, options?.envVars)
     .catch(async (err: unknown) => {
       const msg = err instanceof Error ? err.message : String(err);
       const ts = Date.now();
@@ -198,6 +199,7 @@ async function runDeploymentPipeline(
   publicUrl: string,
   repoUrl: string,
   branch: string,
+  userId: string,
   envVars?: Record<string, string>
 ): Promise<void> {
   const sql = getDb();
@@ -395,6 +397,12 @@ async function runDeploymentPipeline(
 
   await setStatus("live");
   log(`🎉 Deployment LIVE → ${publicUrl}`);
+
+  // Trigger background log indexing for semantic search
+  inngest.send({
+    name: "log/index.requested",
+    data: { sandboxId, userId, ttlDays: 30 },
+  }).catch(() => null); // fire-and-forget, never block the deployment
 }
 
 // ── Sandbox management ─────────────────────────────────────────────────────────
@@ -444,4 +452,3 @@ export async function refreshSandboxStatus(
     return "failed";
   }
 }
-

@@ -135,7 +135,6 @@ function ScoreGauge({ score }: { score: number }) {
   const r = 54;
   const cx = 64;
   const cy = 64;
-  // Start at 180° (left), sweep clockwise to angle
   const toRad = (deg: number) => (deg * Math.PI) / 180;
   const sx = cx + r * Math.cos(toRad(180));
   const sy = cy + r * Math.sin(toRad(180));
@@ -175,7 +174,7 @@ function CurlCopy({ cmd }: { cmd: string }) {
 
 function FindingRow({ f }: { f: Finding }) {
   const [open, setOpen] = useState(false);
-  if (f.result === "pass") return null; // only show failures
+  if (f.result === "pass") return null;
   return (
     <div className="border-b border-gray-100 dark:border-zinc-800 last:border-0">
       <button
@@ -243,6 +242,10 @@ export default function AttackPipelinePage() {
   const abortRef = useRef<AbortController | null>(null);
   const currentRunIdRef = useRef<string | null>(null);
 
+  // Stable log line counter so keys never collide even after clears
+  const logCounterRef = useRef(0);
+  const [logLines, setLogLines] = useState<{ id: string; text: string }[]>([]);
+
   const selectedDeployment = deployments.find((d) => d.sandboxId === selectedSandbox);
   const targetUrl = useCustomUrl ? customUrl.trim() : (selectedDeployment?.publicUrl ?? "");
 
@@ -260,7 +263,6 @@ export default function AttackPipelinePage() {
       .catch(() => null);
   }, []);
 
-  // Load run history (used for manual refresh buttons and post-scan callbacks)
   const fetchRuns = useCallback(async () => {
     setRunsLoading(true);
     try {
@@ -271,7 +273,6 @@ export default function AttackPipelinePage() {
     setRunsLoading(false);
   }, []);
 
-  // Initial load — use Promise callbacks so setState is never called synchronously in the effect body
   useEffect(() => {
     let active = true;
     fetch("/api/attack-pipeline")
@@ -285,7 +286,14 @@ export default function AttackPipelinePage() {
   // Auto-scroll logs
   useEffect(() => {
     logsEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [logs]);
+  }, [logLines]);
+
+  const appendLog = (text: string) => {
+    const id = `log-${++logCounterRef.current}`;
+    setLogLines((prev) => [...prev, { id, text }]);
+    // Keep legacy `logs` in sync for anything that reads it
+    setLogs((prev) => [...prev, text]);
+  };
 
   const loadReport = async (runId: string) => {
     try {
@@ -293,6 +301,7 @@ export default function AttackPipelinePage() {
       const data = await res.json();
       if (data.ok && data.report) {
         setReport(data.report as Report);
+        setLogLines([]);
         setLogs([]);
         setError(null);
       }
@@ -301,7 +310,7 @@ export default function AttackPipelinePage() {
 
   const handleStop = async () => {
     abortRef.current?.abort();
-    setLogs((prev) => [...prev, "⚠ Scan stopped by user."]);
+    appendLog("⚠ Scan stopped by user.");
     setScanning(false);
     const runId = currentRunIdRef.current;
     if (runId) {
@@ -320,6 +329,7 @@ export default function AttackPipelinePage() {
     if (!targetUrl.startsWith("http")) { setError("URL must start with http:// or https://"); return; }
     setError(null);
     setReport(null);
+    setLogLines([]);
     setLogs([]);
     setScanning(true);
     currentRunIdRef.current = null;
@@ -364,14 +374,14 @@ export default function AttackPipelinePage() {
             if (ev.type === "start" && ev.runId) {
               currentRunIdRef.current = ev.runId;
             } else if (ev.type === "progress" && ev.msg) {
-              setLogs((prev) => [...prev, ev.msg!]);
+              appendLog(ev.msg);
             } else if (ev.type === "complete" && ev.report) {
               setReport(ev.report);
-              setLogs((prev) => [...prev, "✓ Scan complete."]);
+              appendLog("✓ Scan complete.");
               fetchRuns();
             } else if (ev.type === "error") {
               setError(ev.error ?? "Scan failed");
-              setLogs((prev) => [...prev, `✗ Error: ${ev.error}`]);
+              appendLog(`✗ Error: ${ev.error}`);
               fetchRuns();
             }
           } catch { /* malformed event */ }
@@ -523,7 +533,7 @@ export default function AttackPipelinePage() {
       </div>
 
       {/* Live terminal */}
-      {(scanning || logs.length > 0) && (
+      {(scanning || logLines.length > 0) && (
         <div className="mb-6 rounded-xl border border-gray-200 dark:border-zinc-800 bg-zinc-950 overflow-hidden">
           <div className="flex items-center gap-2 px-4 py-2 bg-zinc-900 border-b border-zinc-800">
             <Terminal className="w-3.5 h-3.5 text-zinc-400" />
@@ -531,8 +541,9 @@ export default function AttackPipelinePage() {
             {scanning && <Loader2 className="w-3 h-3 text-yellow-400 animate-spin ml-auto" />}
           </div>
           <div className="h-56 overflow-y-auto px-4 py-3 font-mono text-xs text-green-400 space-y-0.5">
-            {logs.map((line, i) => (
-              <div key={i} className="leading-5">{line}</div>
+            {/* FIX #39: stable key per log line instead of array index */}
+            {logLines.map((line) => (
+              <div key={line.id} className="leading-5">{line.text}</div>
             ))}
             <div ref={logsEndRef} />
           </div>
@@ -565,6 +576,7 @@ export default function AttackPipelinePage() {
                 { label: "Passed",   count: report.summary.passed,   color: "text-green-600 dark:text-green-400", bg: "bg-green-50 dark:bg-green-500/10 border-green-200 dark:border-green-500/20" },
                 { label: "Total",    count: report.findings.length,  color: "text-gray-700 dark:text-zinc-300", bg: "bg-gray-50 dark:bg-zinc-800 border-gray-200 dark:border-zinc-700" },
               ].map(({ label, count, color, bg }) => (
+                // FIX #39: `label` is a unique static string — safe as key
                 <div key={label} className={`p-4 rounded-xl border ${bg}`}>
                   <p className="text-xs font-medium text-gray-500 dark:text-zinc-400 uppercase">{label}</p>
                   <p className={`text-2xl font-bold mt-1 ${color}`}>{count}</p>
@@ -585,7 +597,8 @@ export default function AttackPipelinePage() {
                   <p className="text-xs font-semibold text-red-600 dark:text-red-400 uppercase mb-1">Key Findings</p>
                   <ul className="space-y-1">
                     {report.aiAnalysis.criticalFindings.map((f, i) => (
-                      <li key={i} className="flex items-start gap-2 text-sm text-gray-700 dark:text-zinc-300">
+                      // FIX #39: deterministic key combining content slug + position
+                      <li key={`cf-${i}-${f.slice(0, 32)}`} className="flex items-start gap-2 text-sm text-gray-700 dark:text-zinc-300">
                         <XCircle className="w-3.5 h-3.5 text-red-500 mt-0.5 shrink-0" /> {f}
                       </li>
                     ))}
@@ -597,7 +610,8 @@ export default function AttackPipelinePage() {
                   <p className="text-xs font-semibold text-green-600 dark:text-green-400 uppercase mb-1">Recommendations</p>
                   <ul className="space-y-1">
                     {report.aiAnalysis.recommendations.map((r, i) => (
-                      <li key={i} className="flex items-start gap-2 text-sm text-gray-700 dark:text-zinc-300">
+                      // FIX #39: deterministic key combining content slug + position
+                      <li key={`rec-${i}-${r.slice(0, 32)}`} className="flex items-start gap-2 text-sm text-gray-700 dark:text-zinc-300">
                         <CheckCircle2 className="w-3.5 h-3.5 text-green-500 mt-0.5 shrink-0" /> {r}
                       </li>
                     ))}
@@ -611,6 +625,7 @@ export default function AttackPipelinePage() {
           <div>
             <div className="flex gap-1 bg-gray-100 dark:bg-zinc-800 rounded-lg p-1 w-fit mb-4">
               {(["findings", "vibetest", "coverage", "performance"] as const).map((tab) => (
+                // FIX #39: tab name is a stable unique string — fine as key
                 <button key={tab} onClick={() => setActiveTab(tab)}
                   className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors capitalize ${
                     activeTab === tab
@@ -638,6 +653,7 @@ export default function AttackPipelinePage() {
                     const group = failedFindings.filter((f) => f.agent === agent);
                     const open = expandedAgents.has(agent);
                     return (
+                      // FIX #39: agent name is unique per group — fine as key
                       <div key={agent} className="border-b border-gray-200 dark:border-zinc-800 last:border-0">
                         <button
                           onClick={() => toggleAgent(agent)}
@@ -649,6 +665,7 @@ export default function AttackPipelinePage() {
                           </div>
                           {open ? <ChevronUp className="w-4 h-4 text-gray-400" /> : <ChevronDown className="w-4 h-4 text-gray-400" />}
                         </button>
+                        {/* FIX #39: Finding.id is a proper unique identifier from the API */}
                         {open && group.map((f) => <FindingRow key={f.id} f={f} />)}
                       </div>
                     );
@@ -670,13 +687,15 @@ export default function AttackPipelinePage() {
                     <thead>
                       <tr className="bg-gray-50 dark:bg-zinc-800/60 border-b border-gray-200 dark:border-zinc-800">
                         {["Route", "Test Case", "Status", "Evidence"].map((h) => (
+                          // FIX #39: header label is unique — fine as key
                           <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 dark:text-zinc-400 uppercase">{h}</th>
                         ))}
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100 dark:divide-zinc-800">
                       {report.vibetest.map((v, i) => (
-                        <tr key={i} className="bg-white dark:bg-zinc-900">
+                        // FIX #39: deterministic key: route + checkType + position
+                        <tr key={`vibe-${v.route}-${v.checkType}-${i}`} className="bg-white dark:bg-zinc-900">
                           <td className="px-4 py-3 font-mono text-xs text-gray-600 dark:text-zinc-400">{v.route}</td>
                           <td className="px-4 py-3 text-xs">{v.testCase}</td>
                           <td className="px-4 py-3">
@@ -694,8 +713,9 @@ export default function AttackPipelinePage() {
             {/* Coverage tab */}
             {activeTab === "coverage" && (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {(report.coverage ?? []).map((c, i) => (
-                  <div key={i} className={`flex items-center gap-3 px-4 py-3 rounded-lg border text-sm ${
+                {(report.coverage ?? []).map((c) => (
+                  // FIX #39: route is the natural unique identifier for coverage entries
+                  <div key={`cov-${c.route}`} className={`flex items-center gap-3 px-4 py-3 rounded-lg border text-sm ${
                     c.hasIssues ? "border-red-200 bg-red-50/50 dark:border-red-500/20 dark:bg-red-500/5"
                     : c.tested ? "border-green-200 bg-green-50/50 dark:border-green-500/20 dark:bg-green-500/5"
                     : "border-gray-200 bg-gray-50 dark:border-zinc-700 dark:bg-zinc-800/30"
@@ -723,13 +743,15 @@ export default function AttackPipelinePage() {
                     <thead>
                       <tr className="bg-gray-50 dark:bg-zinc-800/60 border-b border-gray-200 dark:border-zinc-800">
                         {["Route", "Avg", "P95", "Req/s", "Success", "Status"].map((h) => (
+                          // FIX #39: header label is unique — fine as key
                           <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 dark:text-zinc-400 uppercase">{h}</th>
                         ))}
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100 dark:divide-zinc-800">
-                      {report.performance.routes.map((r, i) => (
-                        <tr key={i} className="bg-white dark:bg-zinc-900">
+                      {report.performance.routes.map((r) => (
+                        // FIX #39: route is unique per performance entry — use as key
+                        <tr key={`perf-${r.route}`} className="bg-white dark:bg-zinc-900">
                           <td className="px-4 py-3 font-mono text-xs text-gray-600 dark:text-zinc-400">{r.route}</td>
                           <td className="px-4 py-3 text-xs">{r.avgLatency}ms</td>
                           <td className="px-4 py-3 text-xs">{r.p95Latency}ms</td>
@@ -770,6 +792,7 @@ export default function AttackPipelinePage() {
             </div>
           )}
 
+          {/* FIX #39: run.id is the stable DB identifier — already correct */}
           {runs.map((run) => (
             <div
               key={run.id}

@@ -51,8 +51,20 @@ export function Navbar() {
         {/* Desktop nav */}
         <div className="hidden items-center gap-3 md:flex">
           {links.map((link, i) => (
-            <Link key={i} className={buttonVariants({ variant: 'ghost', size: 'default' })} href={link.href}>
-              {link.label}
+            <Link
+              key={i}
+              className={buttonVariants({
+                variant: 'ghost',
+                size: 'default',
+                className: 'group relative overflow-hidden transition-all duration-300 hover:-translate-y-0.5 hover:text-primary',
+              })}
+              href={link.href}
+            >
+              <span>{link.label}</span>
+              <span
+                aria-hidden
+                className="absolute right-3 bottom-1 left-3 h-0.5 origin-left scale-x-0 rounded-full bg-primary transition-transform duration-300 group-hover:scale-x-100"
+              />
             </Link>
           ))}
           <ThemeToggle />
@@ -108,7 +120,10 @@ export function Navbar() {
             {links.map((link) => (
               <Link
                 key={link.label}
-                className={buttonVariants({ variant: 'ghost', className: 'justify-start' })}
+                className={buttonVariants({
+                  variant: 'ghost',
+                  className: 'justify-start transition-colors duration-200 hover:bg-primary/10 hover:text-primary',
+                })}
                 href={link.href}
                 onClick={() => setOpen(false)}
               >

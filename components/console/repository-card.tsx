@@ -44,10 +44,11 @@ const LANG_COLORS: Record<string, string> = {
 interface RepositoryCardProps {
   repo: GitHubRepo;
   onDeploy: (repo: GitHubRepo) => void;
+  onAnalyze?: (repo: GitHubRepo) => void;
   deploying?: boolean;
 }
 
-export function RepositoryCard({ repo, onDeploy, deploying }: RepositoryCardProps) {
+export function RepositoryCard({ repo, onDeploy, onAnalyze, deploying }: RepositoryCardProps) {
   const langColor = repo.language ? (LANG_COLORS[repo.language] ?? "bg-gray-400") : null;
 
   return (
@@ -99,6 +100,15 @@ export function RepositoryCard({ repo, onDeploy, deploying }: RepositoryCardProp
           <Rocket className="w-3.5 h-3.5" />
           {deploying ? "Deploying…" : "Deploy"}
         </button>
+        {onAnalyze && (
+          <button
+            onClick={() => onAnalyze(repo)}
+            disabled={deploying}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors disabled:opacity-50"
+          >
+            Configure
+          </button>
+        )}
         <a
           href={repo.html_url}
           target="_blank"

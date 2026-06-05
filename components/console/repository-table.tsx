@@ -1,3 +1,4 @@
+"use client";
 import { Lock, Unlock, ExternalLink, Rocket } from "lucide-react";
 import type { GitHubRepo } from "./repository-card";
 import { timeAgo } from "./repository-card";
@@ -39,13 +40,13 @@ export function RepositoryTable({ repos, onDeploy, deployingId }: RepositoryTabl
                 key={repo.id}
                 className="bg-white dark:bg-zinc-900 hover:bg-gray-50 dark:hover:bg-zinc-800/50 transition-colors"
               >
-                {/* Repo name + description */}
-                <td className="px-4 py-3">
-                  <p className="font-medium text-gray-900 dark:text-white truncate max-w-xs">
+                {/* Repo name + description with dynamic column-governed truncation layout */}
+                <td className="px-4 py-3 min-w-0">
+                  <p className="font-medium text-gray-900 dark:text-white truncate">
                     {repo.name}
                   </p>
                   {repo.description && (
-                    <p className="text-xs text-gray-400 dark:text-zinc-500 mt-0.5 truncate max-w-xs">
+                    <p className="text-xs text-gray-400 dark:text-zinc-500 mt-0.5 truncate">
                       {repo.description}
                     </p>
                   )}

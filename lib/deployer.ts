@@ -1,11 +1,54 @@
 import { Sandbox } from "e2b";
 import { getDb, ensureTables } from "./db";
+import { inngest } from "./inngest";
 
 // Custom template: Node 20 + git + pnpm + serve pre-installed (qg1v6gyvxew6q52r04lp)
 const E2B_TEMPLATE = process.env.E2B_TEMPLATE ?? "secdev-web-runtime";
 const SANDBOX_TIMEOUT_MS = 60 * 60 * 1000; // 1 hour
 
 // ── Types ─────────────────────────────────────────────────────────────────────
+
+export interface E2BResourceConfig {
+  cpu: number;       // Number of vCPUs
+  memory: number;    // RAM in Megabytes (MB)
+}
+
+/**
+ * Heuristic engine to dynamically allocate CPU and RAM for E2B sandboxes
+ * based on the repository's framework and footprint.
+ */
+export function getRecommendedResources(repoMeta: {
+  framework?: string;
+  hasNextJs?: boolean;
+  totalDependencies?: number;
+}): E2BResourceConfig {
+  
+  // Baseline allocation: Light static sites or basic HTML/JS
+  let cpu = 1;
+  let memory = 1024; // 1 GB RAM
+
+  // Heavy Frameworks: Next.js, Nuxt, or Remix (Require significant build/dev overhead)
+  if (repoMeta.hasNextJs || repoMeta.framework === 'nextjs' || repoMeta.framework === 'nuxt') {
+    return {
+      cpu: 2,       // 2 vCPUs to handle concurrent compilation threads
+      memory: 4096  // 4 GB RAM to prevent Out-Of-Memory (OOM) crashes during builds
+    };
+  }
+
+  // Medium Frameworks: Express backends or standard SPAs
+  if (repoMeta.framework === 'express' || repoMeta.framework === 'nest') {
+    cpu = 1;
+    memory = 2048; // 2 GB RAM
+  }
+
+  // Edge case: Catch massive dependency bloat regardless of framework
+  if (repoMeta.totalDependencies && repoMeta.totalDependencies > 50) {
+    cpu = Math.max(cpu, 2);
+    memory = Math.max(memory, 4096);
+  }
+
+  return { cpu, memory };
+}
 
 export interface LogLine {
   ts: number;
@@ -116,6 +159,8 @@ export async function startDeployment(
     envVars?: Record<string, string>;
     repoName?: string;
     userId?: string;
+    customCpu?: number;
+    customMemory?: number;
   }
 ): Promise<DeploymentResult> {
   const branch = options?.branch ?? "main";
@@ -151,8 +196,8 @@ export async function startDeployment(
     }
   }
 
-  // Create the sandbox (takes ~3s). We await this so we can return a real URL immediately.
-  const sandbox = await Sandbox.create(E2B_TEMPLATE, {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const sandboxOptions: any = {
     apiKey: process.env.E2B_API_KEY,
     timeoutMs: SANDBOX_TIMEOUT_MS,
     metadata: {
@@ -161,7 +206,11 @@ export async function startDeployment(
       repoName,
       createdAt: new Date().toISOString(),
     },
-  });
+  };
+  if (options?.customCpu) sandboxOptions.customCpu = options.customCpu;
+  if (options?.customMemory) sandboxOptions.customMemory = options.customMemory;
+
+  const sandbox = await Sandbox.create(E2B_TEMPLATE, sandboxOptions);
 
   const sandboxId = sandbox.sandboxId;
   const publicUrl = `https://${sandbox.getHost(3000)}`;
@@ -177,7 +226,7 @@ export async function startDeployment(
   `;
 
   // Fire-and-forget background deployment pipeline
-  runDeploymentPipeline(sandbox, sandboxId, repoName, publicUrl, repoUrl, branch, options?.envVars)
+  runDeploymentPipeline(sandbox, sandboxId, repoName, publicUrl, repoUrl, branch, userId, options?.envVars)
     .catch(async (err: unknown) => {
       const msg = err instanceof Error ? err.message : String(err);
       const ts = Date.now();
@@ -198,6 +247,7 @@ async function runDeploymentPipeline(
   publicUrl: string,
   repoUrl: string,
   branch: string,
+  userId: string,
   envVars?: Record<string, string>
 ): Promise<void> {
   const sql = getDb();
@@ -395,6 +445,12 @@ async function runDeploymentPipeline(
 
   await setStatus("live");
   log(`🎉 Deployment LIVE → ${publicUrl}`);
+
+  // Trigger background log indexing for semantic search
+  inngest.send({
+    name: "log/index.requested",
+    data: { sandboxId, userId, ttlDays: 30 },
+  }).catch(() => null); // fire-and-forget, never block the deployment
 }
 
 // ── Sandbox management ─────────────────────────────────────────────────────────
@@ -444,4 +500,3 @@ export async function refreshSandboxStatus(
     return "failed";
   }
 }
-

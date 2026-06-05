@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { startDeployment, getAllDeployments } from "@/lib/deployer";
+import { startDeployment, getAllDeployments, getRecommendedResources } from "@/lib/deployer";
 import { getEnvVars } from "@/lib/env-store";
 import { auth } from "@/lib/auth";
 
@@ -11,12 +11,19 @@ export async function POST(request: Request) {
     }
     const userId = session.user.id;
     const body = await request.json();
-    const { repo_name, repo_url, branch } = body;
+    const { repo_name, repo_url, branch, repoMeta, userSelectedResources } = body;
 
     const targetUrl: string = repo_url ?? body.repoUrl;
     if (!targetUrl) {
       return NextResponse.json({ error: "repo_url required" }, { status: 400 });
     }
+
+    // 1. Compute the engine's recommended resources
+    const recommended = getRecommendedResources(repoMeta || {});
+
+    // 2. Use user selections if provided in the UI, otherwise fall back to recommendations
+    const finalCpu = userSelectedResources?.cpu || recommended.cpu;
+    const finalMemory = userSelectedResources?.memory || recommended.memory;
 
     // Load saved env vars for this repo if any
     const savedEnvVars = repo_name ? await getEnvVars(repo_name) : {};
@@ -26,6 +33,8 @@ export async function POST(request: Request) {
       repoName: repo_name ?? undefined,
       envVars: Object.keys(savedEnvVars).length > 0 ? savedEnvVars : undefined,
       userId,
+      customCpu: finalCpu,
+      customMemory: finalMemory,
     });
 
     return NextResponse.json({
@@ -37,6 +46,7 @@ export async function POST(request: Request) {
         repo_url: targetUrl,
         branch: branch ?? "main",
       },
+      allocated: { cpu: finalCpu, memory: finalMemory }
     });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);

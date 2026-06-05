@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Rocket, ExternalLink, Trash2, RefreshCw, Server, ScrollText, RotateCcw, AlertTriangle } from "lucide-react";
+import { Rocket, ExternalLink, Trash2, RefreshCw, Server, ScrollText, RotateCcw, AlertTriangle, Copy, Check } from "lucide-react";
 
 interface DeploymentSummary {
   sandboxId: string;
@@ -32,6 +32,33 @@ const STATUS_DOT: Record<DeploymentSummary["status"], string> = {
   live: "bg-green-500 animate-pulse",
   failed: "bg-red-500",
 };
+
+// Isolated Copy Component to maintain separate success timer states inside lists (Fixes #49)
+function CopyButton({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = async (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent row click events
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // Fallback if system permission is denied
+    }
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={handleCopy}
+      className="p-1 rounded bg-gray-100 hover:bg-gray-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-gray-500 dark:text-zinc-400 transition-colors shrink-0"
+      title="Copy URL to clipboard"
+    >
+      {copied ? <Check className="w-3 h-3 text-green-600 dark:text-green-400" /> : <Copy className="w-3 h-3" />}
+    </button>
+  );
+}
 
 export default function Page() {
   const router = useRouter();
@@ -71,6 +98,11 @@ export default function Page() {
   }, []);
 
   const handleKill = async (sandboxId: string) => {
+    // Safety check confirmation added here
+    if (!window.confirm("Are you sure you want to stop and terminate this sandbox?")) {
+      return;
+    }
+
     setKillingId(sandboxId);
     try {
       const res = await fetch(`/api/deploy/${sandboxId}`, { method: "DELETE" });
@@ -86,12 +118,16 @@ export default function Page() {
   };
 
   const handleRedeploy = async (sandboxId: string) => {
+    // Safety check confirmation added here
+    if (!window.confirm("Are you sure you want to redeploy this application?")) {
+      return;
+    }
+
     setRedeployingId(sandboxId);
     try {
       const res = await fetch(`/api/deploy/${sandboxId}`, { method: "POST" });
       const data = await res.json();
       if (data.ok && data.deployment?.sandboxId) {
-        // Navigate to the new deployment's log page
         router.push(`/console/deployments/${data.deployment.sandboxId}`);
       } else {
         alert(data.error ?? "Redeploy failed");
@@ -185,17 +221,20 @@ export default function Page() {
                     <span>{new Date(d.startedAt).toLocaleString()}</span>
                     <span>{d.logCount} log lines</span>
                   </div>
-                  {d.publicUrl && d.status !== "live" && (
-                    <div className="flex items-center gap-1.5 mt-1.5">
-                      <span className="text-xs text-gray-400 dark:text-zinc-500">Preview URL:</span>
+                  
+                  {/* Public Preview Block with Copy to Clipboard Integration */}
+                  {d.publicUrl && (
+                    <div className="flex items-center gap-2 mt-2 bg-gray-50 dark:bg-zinc-800/40 border border-gray-100 dark:border-zinc-800/60 rounded-lg px-2.5 py-1.5 w-fit max-w-full">
+                      <span className="text-xs text-gray-400 dark:text-zinc-500 font-medium whitespace-nowrap">Preview URL:</span>
                       <a
                         href={d.publicUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-xs font-mono text-blue-500 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 truncate max-w-xs"
+                        className="text-xs font-mono text-blue-500 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 truncate max-w-xs md:max-w-md underline"
                       >
                         {d.publicUrl}
                       </a>
+                      <CopyButton text={d.publicUrl} />
                     </div>
                   )}
                 </div>

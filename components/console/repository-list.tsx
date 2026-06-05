@@ -5,6 +5,8 @@ import { Github, AlertCircle, PackageOpen, LayoutGrid, List } from "lucide-react
 import { signIn } from "next-auth/react";
 import { RepositoryCard, type GitHubRepo } from "./repository-card";
 import { RepositoryTable } from "./repository-table";
+import { ResourceSelector } from "./resource-selector";
+import { analyzePackageJson } from "@/lib/repo-analyzer";
 
 function SkeletonCard() {
   return (
@@ -73,6 +75,9 @@ export function RepositoryList({
   const [deployingId, setDeployingId] = useState<number | null>(null);
   const [deployMsg, setDeployMsg] = useState<{ id: number; ok: boolean; msg: string; url?: string } | null>(null);
   const [search, setSearch] = useState("");
+  const [userSelectedResources, setUserSelectedResources] = useState({ cpu: 1, memory: 1024 });
+  const [repoMeta, setRepoMeta] = useState({});
+  const [analyzingId, setAnalyzingId] = useState<number | null>(null);
 
   useEffect(() => {
     if (status !== "authenticated" || !session?.accessToken) return;
@@ -104,6 +109,8 @@ export function RepositoryList({
           repo_name: repo.name,
           repo_url: repo.clone_url,
           branch: repo.default_branch,
+          repoMeta,
+          userSelectedResources,
         }),
       });
       const data = await res.json();
@@ -123,6 +130,42 @@ export function RepositoryList({
     } finally {
       setDeployingId(null);
       setTimeout(() => setDeployMsg(null), 8000);
+    }
+  };
+
+  const handleSelectRepository = async (repo: GitHubRepo) => {
+    setAnalyzingId(repo.id);
+    try {
+      const res = await fetch(`/api/github/package?repo=${encodeURIComponent(repo.fullName || (repo as { full_name?: string }).full_name || repo.name)}`);
+      const data = await res.json();
+      
+      // 2. Analyze the metadata
+      if (data.content) {
+        const meta = analyzePackageJson(data.content);
+        setRepoMeta(meta);
+        setDeployMsg({
+          id: repo.id,
+          ok: true,
+          msg: `Analyzed ${repo.name}. Framework: ${meta.framework}, Dependencies: ${meta.totalDependencies}. Customize resources above.`,
+        });
+      } else {
+        setRepoMeta({});
+        setDeployMsg({
+          id: repo.id,
+          ok: false,
+          msg: `No package.json found for ${repo.name}. Using default resource allocations.`,
+        });
+      }
+    } catch {
+      setRepoMeta({});
+      setDeployMsg({
+        id: repo.id,
+        ok: false,
+        msg: `Failed to analyze ${repo.name}. Using default resource allocations.`,
+      });
+    } finally {
+      setAnalyzingId(null);
+      setTimeout(() => setDeployMsg(null), 5000);
     }
   };
 
@@ -179,11 +222,19 @@ export function RepositoryList({
         </div>
       )}
 
+      {/* Global Resource Configuration */}
+      {!compact && (
+        <div className="mb-6">
+          <ResourceSelector repoMeta={repoMeta} onChange={setUserSelectedResources} />
+        </div>
+      )}
+
       {/* Controls */}
       {!compact && (
         <div className="flex items-center gap-3">
           <input
             type="text"
+            aria-label="Search repositories"
             placeholder="Search repositories…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -232,7 +283,9 @@ export function RepositoryList({
       {loading && (
         view === "grid" ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)}
+            {Array.from({ length: 6 }).map((_, i) => (
+              <SkeletonCard key={`repo-skeleton-card-${i}`} />
+            ))}
           </div>
         ) : (
           <div className="overflow-x-auto rounded-xl border border-gray-200 dark:border-zinc-800">
@@ -247,7 +300,9 @@ export function RepositoryList({
                 </tr>
               </thead>
               <tbody className="bg-white dark:bg-zinc-900">
-                {Array.from({ length: 6 }).map((_, i) => <SkeletonRow key={i} />)}
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <SkeletonRow key={`repo-skeleton-row-${i}`} />
+                ))}
               </tbody>
             </table>
           </div>
@@ -273,7 +328,8 @@ export function RepositoryList({
               key={repo.id}
               repo={repo}
               onDeploy={handleDeploy}
-              deploying={deployingId === repo.id}
+              onAnalyze={handleSelectRepository}
+              deploying={deployingId === repo.id || analyzingId === repo.id}
             />
           ))}
         </div>

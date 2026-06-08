@@ -38,7 +38,7 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="flex min-h-[calc(100vh-4rem)] w-full">
+    <div className="flex min-h-[100vh] w-full">
       {/* ── Left panel – form ── */}
       <div className="flex w-full flex-col justify-center px-8 py-12 sm:px-12 lg:w-1/2 xl:px-20 bg-[#0a0a0a]">
         <div className="mx-auto w-full max-w-sm">

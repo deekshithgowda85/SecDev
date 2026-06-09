@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "jest"
+    "test": "jest",
+    "test:watch": "jest --watch",
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.0.2",

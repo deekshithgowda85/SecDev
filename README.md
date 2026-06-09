@@ -762,4 +762,144 @@ The score is:
 
 ---
 
+## Development & Testing Scripts
+
+The project uses npm scripts to simplify development, testing, and production workflows.
+
+### Available Scripts
+
+| Command                 | Description                                               |
+| ----------------------- | --------------------------------------------------------- |
+| `npm run dev`           | Starts the Next.js development server with hot reloading. |
+| `npm run build`         | Creates an optimized production build.                    |
+| `npm run start`         | Starts the production server using the generated build.   |
+| `npm run lint`          | Runs ESLint to identify code quality and style issues.    |
+| `npm test`              | Executes the Jest test suite.                             |
+| `npm run test:coverage` | Runs tests and generates a code coverage report.          |
+
+---
+
+## Common Development Workflows
+
+### Start Local Development
+
+```bash
+npm install
+npm run dev
+```
+
+The application will be available at:
+
+```text
+http://localhost:3000
+```
+
+---
+
+### Run Lint Checks
+
+Before submitting changes:
+
+```bash
+npm run lint
+```
+
+This helps identify formatting and code quality issues.
+
+---
+
+### Run Unit Tests
+
+Execute the test suite:
+
+```bash
+npm test
+```
+
+---
+
+### Generate Test Coverage
+
+Run tests with coverage reporting:
+
+```bash
+npm run test:coverage
+```
+
+Coverage reports are generated in:
+
+```text
+coverage/
+```
+
+The HTML report can be viewed at:
+
+```text
+coverage/lcov-report/index.html
+```
+
+---
+
+### Create a Production Build
+
+Verify production readiness:
+
+```bash
+npm run build
+```
+
+---
+
+### Run the Production Server
+
+After building:
+
+```bash
+npm run start
+```
+
+---
+
+## Recommended Contributor Workflow
+
+1. Fork the repository
+2. Create a feature branch
+3. Install dependencies
+4. Implement changes
+5. Run lint checks
+6. Run tests
+7. Verify coverage (if applicable)
+8. Commit and push changes
+9. Open a Pull Request
+
+Example:
+
+```bash
+git checkout -b feature/my-feature
+
+npm run lint
+npm test
+
+git add .
+git commit -m "feat: add my feature"
+git push origin feature/my-feature
+```
+
+---
+
+## Troubleshooting
+
+If a script fails:
+
+1. Verify Node.js is installed
+2. Run:
+
+```bash
+npm install
+```
+
+3. Ensure environment variables are configured correctly
+4. Review terminal logs for detailed error messages
+
+
 _Built with Next.js · E2B · Neon PostgreSQL · Inngest · Groq · TypeScript_

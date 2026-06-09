@@ -90,12 +90,18 @@ export default function RegisterPage() {
                   className="w-full rounded-2xl border border-zinc-700 bg-zinc-900 px-4 py-3.5 pr-12 text-sm text-white placeholder:text-zinc-600 focus:border-zinc-500 focus:outline-none transition-colors"
                 />
                 <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300 transition-colors"
-                >
-                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
+  type="button"
+  onClick={() => setShowPassword(!showPassword)}
+  aria-label={showPassword ? "Hide password" : "Show password"}
+  aria-pressed={showPassword}
+  className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300 transition-colors"
+>
+  {showPassword ? (
+    <EyeOff className="w-4 h-4" aria-hidden="true" />
+  ) : (
+    <Eye className="w-4 h-4" aria-hidden="true" />
+  )}
+</button>
               </div>
             </div>
 

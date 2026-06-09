@@ -96,6 +96,79 @@ describe("Crypto Utils", () => {
       parts[1] = "00000000000000000000000000000000"; 
       const tampered = parts.join(":");
       expect(() => decrypt(tampered)).toThrow();
+      describe("Secret Key Rotation Compatibility", () => {
+  it("should fail to decrypt data encrypted with a different secret", () => {
+    const originalSecret = process.env.NEXTAUTH_SECRET;
+
+    process.env.NEXTAUTH_SECRET =
+      "first-secret-key-32-chars-long-abc";
+
+    const ciphertext = encrypt(
+      "sensitive deployment data"
+    );
+
+    process.env.NEXTAUTH_SECRET =
+      "second-secret-key-32-chars-long-xyz";
+
+    expect(() =>
+      decrypt(ciphertext)
+    ).toThrow();
+
+    process.env.NEXTAUTH_SECRET =
+      originalSecret;
+  });
+
+  it("should successfully decrypt when the original secret is restored", () => {
+    const originalSecret = process.env.NEXTAUTH_SECRET;
+
+    process.env.NEXTAUTH_SECRET =
+      "rotation-test-secret-1-abcdef";
+
+    const ciphertext = encrypt(
+      "persistent secret"
+    );
+
+    process.env.NEXTAUTH_SECRET =
+      "rotation-test-secret-2-ghijkl";
+
+    expect(() =>
+      decrypt(ciphertext)
+    ).toThrow();
+
+    process.env.NEXTAUTH_SECRET =
+      "rotation-test-secret-1-abcdef";
+
+    const decrypted =
+      decrypt(ciphertext);
+
+    expect(decrypted).toBe(
+      "persistent secret"
+    );
+
+    process.env.NEXTAUTH_SECRET =
+      originalSecret;
+  });
+
+  it("should document expected behavior after key rotation", () => {
+    const originalSecret = process.env.NEXTAUTH_SECRET;
+
+    process.env.NEXTAUTH_SECRET =
+      "deployment-secret-v1";
+
+    const ciphertext =
+      encrypt("rotation test");
+
+    process.env.NEXTAUTH_SECRET =
+      "deployment-secret-v2";
+
+    expect(() =>
+      decrypt(ciphertext)
+    ).toThrow();
+
+    process.env.NEXTAUTH_SECRET =
+      originalSecret;
+  });
+});
     });
   });
 });

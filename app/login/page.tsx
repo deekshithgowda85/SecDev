@@ -112,17 +112,7 @@ export default function LoginPage() {
 
             {/* Keep signed in + Reset password */}
             <div className="flex items-center justify-between">
-              <label className="flex items-center gap-2.5 cursor-pointer select-none">
-                <div
-                  onClick={() => setKeepSignedIn(!keepSignedIn)}
-                  className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
-                    keepSignedIn ? "border-white bg-white" : "border-zinc-600 bg-transparent"
-                  }`}
-                >
-                  {keepSignedIn && <div className="w-2 h-2 rounded-full bg-black" />}
-                </div>
-                <span className="text-sm text-white">Keep me signed in</span>
-              </label>
+              
               <button type="button" className="text-sm text-blue-400 hover:text-blue-300 transition-colors">
                 Reset password
               </button>

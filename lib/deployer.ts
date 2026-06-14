@@ -120,6 +120,12 @@ export async function startDeployment(
   }
 ): Promise<DeploymentResult> {
   const branch = options?.branch ?? "main";
+
+  const SAFE_BRANCH_RE = /^[a-zA-Z0-9_\-/.]+$/;
+  if (!SAFE_BRANCH_RE.test(branch)) {
+    throw new Error(`Invalid branch name: ${branch}`);
+  }
+
   const repoName =
     options?.repoName ??
     repoUrl.split("/").pop()?.replace(/\.git$/, "") ??

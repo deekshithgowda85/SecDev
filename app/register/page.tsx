@@ -13,15 +13,39 @@ export default function RegisterPage() {
   const router = useRouter();
 
   async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setLoading(true);
-    setError(null);
-    try {
-      const response = await fetch("/api/auth/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
+  e.preventDefault();
+
+  const trimmedEmail = email.trim();
+
+  setError(null);
+
+  if (!trimmedEmail) {
+    setError("Email address is required");
+    return;
+  }
+
+  const emailRegex =
+    /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  if (!emailRegex.test(trimmedEmail)) {
+    setError("Please enter a valid email address");
+    return;
+  }
+
+  if (!password.trim()) {
+    setError("Password is required");
+    return;
+  }
+
+  setLoading(true);
+
+  try {
+    const result = await signIn("credentials", {
+      email: trimmedEmail,
+      password,
+      redirect: false,
+      callbackUrl: "/console/dashboard",
+    });
 
       const payload = (await response.json()) as { ok?: boolean; error?: string; detail?: string };
 

@@ -1,11 +1,24 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
+import { getDb, ensureTables } from "@/lib/db";
 import {
   getEnvVars,
   listEnvVars,
   setEnvVar,
   deleteEnvVar,
 } from "@/lib/env-store";
+
+/** Returns true if userId owns at least one deployment for the given repoName. */
+async function userOwnsProject(userId: string, project: string): Promise<boolean> {
+  await ensureTables();
+  const sql = getDb();
+  const rows = await sql`
+    SELECT 1 FROM deployments
+    WHERE user_id = ${userId} AND repo_name = ${project}
+    LIMIT 1
+  `;
+  return rows.length > 0;
+}
 
 /**
  * GET /api/env-vars?project=<repoName>&reveal=1
@@ -25,6 +38,10 @@ export async function GET(request: Request) {
 
     if (!project) {
       return NextResponse.json({ error: "project query param required" }, { status: 400 });
+    }
+
+    if (!(await userOwnsProject(session.user.id, project))) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
     if (reveal) {
@@ -64,6 +81,10 @@ export async function POST(request: Request) {
       );
     }
 
+    if (!(await userOwnsProject(session.user.id, project))) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
     // Basic key validation — only allow safe env var names
     if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(key)) {
       return NextResponse.json(
@@ -96,6 +117,10 @@ export async function DELETE(request: Request) {
 
     if (!project || !key) {
       return NextResponse.json({ error: "project and key are required" }, { status: 400 });
+    }
+
+    if (!(await userOwnsProject(session.user.id, project))) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
     await deleteEnvVar(project, key);

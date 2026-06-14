@@ -761,5 +761,23 @@ The score is:
 - Used to determine the risk level badge color
 
 ---
+### Watch Mode
+
+For a faster development workflow, run Jest in watch mode:
+
+```bash
+npm run test:watch
+```
+
+Jest will automatically rerun relevant tests whenever files change, providing immediate feedback during development.
+
+### Coverage Reporting
+
+Generate a coverage report:
+
+```bash
+npm run test:coverage
+```
+
 
 _Built with Next.js · E2B · Neon PostgreSQL · Inngest · Groq · TypeScript_

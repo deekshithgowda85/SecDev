@@ -75,6 +75,47 @@ describe("Crypto Utils", () => {
   });
 
   describe("Robust Error & Tamper Handling", () => {
+    it("should throw an error when IV is empty", () => {
+  expect(() =>
+    decrypt(":abcdef1234567890:deadbeef")
+  ).toThrow();
+});
+
+it("should throw an error when authentication tag is empty", () => {
+  expect(() =>
+    decrypt("abcdef1234567890::deadbeef")
+  ).toThrow();
+});
+
+it("should throw an error when encrypted payload is empty", () => {
+  expect(() =>
+    decrypt("abcdef1234567890:abcdef1234567890:")
+  ).toThrow();
+});
+
+it("should throw an error for non-hexadecimal IV values", () => {
+  expect(() =>
+    decrypt("invalidIV:abcdef1234567890:deadbeef")
+  ).toThrow();
+});
+
+it("should throw an error for non-hexadecimal authentication tags", () => {
+  expect(() =>
+    decrypt("abcdef1234567890:invalidTAG:deadbeef")
+  ).toThrow();
+});
+
+it("should throw an error for non-hexadecimal encrypted payloads", () => {
+  expect(() =>
+    decrypt("abcdef1234567890:abcdef1234567890:invalidDATA")
+  ).toThrow();
+});
+
+it("should throw an error when ciphertext contains excess delimiters", () => {
+  expect(() =>
+    decrypt("a:b:c:d")
+  ).toThrow();
+});
     it("should throw an error if the input string is malformed", () => {
       expect(() => decrypt("not-a-valid-ciphertext")).toThrow();
       expect(() => decrypt("one:two")).toThrow();
@@ -96,6 +137,149 @@ describe("Crypto Utils", () => {
       parts[1] = "00000000000000000000000000000000"; 
       const tampered = parts.join(":");
       expect(() => decrypt(tampered)).toThrow();
+      describe("Secret Key Rotation Compatibility", () => {
+  it("should fail to decrypt data encrypted with a different secret", () => {
+    const originalSecret = process.env.NEXTAUTH_SECRET;
+
+    process.env.NEXTAUTH_SECRET =
+      "first-secret-key-32-chars-long-abc";
+
+    const ciphertext = encrypt(
+      "sensitive deployment data"
+    );
+
+    process.env.NEXTAUTH_SECRET =
+      "second-secret-key-32-chars-long-xyz";
+
+    expect(() =>
+      decrypt(ciphertext)
+    ).toThrow();
+
+    process.env.NEXTAUTH_SECRET =
+      originalSecret;
+  });
+
+  it("should successfully decrypt when the original secret is restored", () => {
+    const originalSecret = process.env.NEXTAUTH_SECRET;
+
+    process.env.NEXTAUTH_SECRET =
+      "rotation-test-secret-1-abcdef";
+
+    const ciphertext = encrypt(
+      "persistent secret"
+    );
+
+    process.env.NEXTAUTH_SECRET =
+      "rotation-test-secret-2-ghijkl";
+
+    expect(() =>
+      decrypt(ciphertext)
+    ).toThrow();
+
+    process.env.NEXTAUTH_SECRET =
+      "rotation-test-secret-1-abcdef";
+
+    const decrypted =
+      decrypt(ciphertext);
+
+    expect(decrypted).toBe(
+      "persistent secret"
+    );
+
+    process.env.NEXTAUTH_SECRET =
+      originalSecret;
+  });
+
+  it("should document expected behavior after key rotation", () => {
+    const originalSecret = process.env.NEXTAUTH_SECRET;
+
+    process.env.NEXTAUTH_SECRET =
+      "deployment-secret-v1";
+
+    const ciphertext =
+      encrypt("rotation test");
+
+    process.env.NEXTAUTH_SECRET =
+      "deployment-secret-v2";
+
+    expect(() =>
+      decrypt(ciphertext)
+    ).toThrow();
+
+    process.env.NEXTAUTH_SECRET =
+      originalSecret;
+  });
+});
     });
+  });
+});
+
+describe("Multi-Format Data Validation", () => {
+  it("should encrypt and decrypt JSON payloads correctly", () => {
+    const payload = JSON.stringify({
+      name: "John",
+      role: "Admin",
+      permissions: ["read", "write"],
+    });
+
+    const ciphertext = encrypt(payload);
+    const decrypted = decrypt(ciphertext);
+
+    expect(ciphertext).not.toBe(payload);
+    expect(decrypted).toBe(payload);
+  });
+
+  it("should preserve multiline strings during encryption and decryption", () => {
+    const payload = `Line 1
+Line 2
+Line 3
+Line 4`;
+
+    const ciphertext = encrypt(payload);
+    const decrypted = decrypt(ciphertext);
+
+    expect(ciphertext).not.toBe(payload);
+    expect(decrypted).toBe(payload);
+  });
+
+  it("should correctly handle unicode and multilingual content", () => {
+    const payload =
+      "Hello 世界 🌍 Encryption Test 🔐 مرحبا بالعالم";
+
+    const ciphertext = encrypt(payload);
+    const decrypted = decrypt(ciphertext);
+
+    expect(ciphertext).not.toBe(payload);
+    expect(decrypted).toBe(payload);
+  });
+
+  it("should encrypt and decrypt serialized configuration data", () => {
+    const payload = JSON.stringify({
+      server: "localhost",
+      port: 8080,
+      ssl: true,
+      timeout: 5000,
+    });
+
+    const ciphertext = encrypt(payload);
+    const decrypted = decrypt(ciphertext);
+
+    expect(ciphertext).not.toBe(payload);
+    expect(decrypted).toBe(payload);
+  });
+
+  it("should preserve mixed unicode and serialized content", () => {
+    const payload = JSON.stringify({
+      username: "John",
+      city: "東京",
+      emoji: "🚀🔐",
+      notes: "مرحبا بالعالم",
+    });
+
+    const ciphertext = encrypt(payload);
+    const decrypted = decrypt(ciphertext);
+
+    expect(ciphertext).not.toBe(payload);
+    expect(decrypted).toBe(payload);
   });
 });

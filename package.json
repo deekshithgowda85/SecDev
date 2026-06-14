@@ -10,6 +10,14 @@
     "test": "jest",
     "test:watch": "jest --watch",
   },
+ "scripts": {
+  "dev": "next dev",
+  "build": "next build",
+  "start": "next start",
+  "lint": "eslint",
+  "test": "jest",
+  "test:coverage": "jest --coverage"
+},
   "dependencies": {
     "@neondatabase/serverless": "^1.0.2",
     "@radix-ui/react-label": "^2.1.8",

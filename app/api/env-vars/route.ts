@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { auth } from "@/lib/auth";
 import {
   getEnvVars,
   listEnvVars,
@@ -12,6 +13,11 @@ import {
  *   otherwise → returns masked values
  */
 export async function GET(request: Request) {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     const { searchParams } = new URL(request.url);
     const project = searchParams.get("project");
@@ -42,6 +48,11 @@ export async function GET(request: Request) {
  * Body: { project: string; key: string; value: string }
  */
 export async function POST(request: Request) {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     const body = await request.json();
     const { project, key, value } = body;
@@ -74,6 +85,11 @@ export async function POST(request: Request) {
  * Body: { project: string; key: string }
  */
 export async function DELETE(request: Request) {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     const body = await request.json();
     const { project, key } = body;

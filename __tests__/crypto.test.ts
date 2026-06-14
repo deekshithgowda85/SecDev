@@ -99,3 +99,73 @@ describe("Crypto Utils", () => {
     });
   });
 });
+
+describe("Multi-Format Data Validation", () => {
+  it("should encrypt and decrypt JSON payloads correctly", () => {
+    const payload = JSON.stringify({
+      name: "John",
+      role: "Admin",
+      permissions: ["read", "write"],
+    });
+
+    const ciphertext = encrypt(payload);
+    const decrypted = decrypt(ciphertext);
+
+    expect(ciphertext).not.toBe(payload);
+    expect(decrypted).toBe(payload);
+  });
+
+  it("should preserve multiline strings during encryption and decryption", () => {
+    const payload = `Line 1
+Line 2
+Line 3
+Line 4`;
+
+    const ciphertext = encrypt(payload);
+    const decrypted = decrypt(ciphertext);
+
+    expect(ciphertext).not.toBe(payload);
+    expect(decrypted).toBe(payload);
+  });
+
+  it("should correctly handle unicode and multilingual content", () => {
+    const payload =
+      "Hello 世界 🌍 Encryption Test 🔐 مرحبا بالعالم";
+
+    const ciphertext = encrypt(payload);
+    const decrypted = decrypt(ciphertext);
+
+    expect(ciphertext).not.toBe(payload);
+    expect(decrypted).toBe(payload);
+  });
+
+  it("should encrypt and decrypt serialized configuration data", () => {
+    const payload = JSON.stringify({
+      server: "localhost",
+      port: 8080,
+      ssl: true,
+      timeout: 5000,
+    });
+
+    const ciphertext = encrypt(payload);
+    const decrypted = decrypt(ciphertext);
+
+    expect(ciphertext).not.toBe(payload);
+    expect(decrypted).toBe(payload);
+  });
+
+  it("should preserve mixed unicode and serialized content", () => {
+    const payload = JSON.stringify({
+      username: "John",
+      city: "東京",
+      emoji: "🚀🔐",
+      notes: "مرحبا بالعالم",
+    });
+
+    const ciphertext = encrypt(payload);
+    const decrypted = decrypt(ciphertext);
+
+    expect(ciphertext).not.toBe(payload);
+    expect(decrypted).toBe(payload);
+  });
+});

@@ -75,6 +75,47 @@ describe("Crypto Utils", () => {
   });
 
   describe("Robust Error & Tamper Handling", () => {
+    it("should throw an error when IV is empty", () => {
+  expect(() =>
+    decrypt(":abcdef1234567890:deadbeef")
+  ).toThrow();
+});
+
+it("should throw an error when authentication tag is empty", () => {
+  expect(() =>
+    decrypt("abcdef1234567890::deadbeef")
+  ).toThrow();
+});
+
+it("should throw an error when encrypted payload is empty", () => {
+  expect(() =>
+    decrypt("abcdef1234567890:abcdef1234567890:")
+  ).toThrow();
+});
+
+it("should throw an error for non-hexadecimal IV values", () => {
+  expect(() =>
+    decrypt("invalidIV:abcdef1234567890:deadbeef")
+  ).toThrow();
+});
+
+it("should throw an error for non-hexadecimal authentication tags", () => {
+  expect(() =>
+    decrypt("abcdef1234567890:invalidTAG:deadbeef")
+  ).toThrow();
+});
+
+it("should throw an error for non-hexadecimal encrypted payloads", () => {
+  expect(() =>
+    decrypt("abcdef1234567890:abcdef1234567890:invalidDATA")
+  ).toThrow();
+});
+
+it("should throw an error when ciphertext contains excess delimiters", () => {
+  expect(() =>
+    decrypt("a:b:c:d")
+  ).toThrow();
+});
     it("should throw an error if the input string is malformed", () => {
       expect(() => decrypt("not-a-valid-ciphertext")).toThrow();
       expect(() => decrypt("one:two")).toThrow();

@@ -52,7 +52,7 @@ export async function executeSecurityRequest(
     if (typeof (res.headers as { getSetCookie?: () => string[] }).getSetCookie === "function") {
       setCookies.push(...((res.headers as { getSetCookie: () => string[] }).getSetCookie()));
     } else if (headers["set-cookie"]) {
-      setCookies.push(headers["set-cookie"]);
+      setCookies.push(...headers["set-cookie"].split(",").map(c => c.trim()));
     }
 
     return {

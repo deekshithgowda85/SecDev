@@ -11,6 +11,10 @@ module.exports = {
     ...tsJestTransformCfg,
   },
 
+  moduleNameMapper: {
+    "^@/(.*)$": "<rootDir>/$1",
+  },
+
   collectCoverage: true,
 
   collectCoverageFrom: [

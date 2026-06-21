@@ -3,6 +3,8 @@
  * Designed for stateful security testing workflows (e.g. login-then-probe).
  */
 
+import { executeSecurityRequest } from "../../utils/securityHttpClient";
+
 export interface RequestOptions {
   method?: string;
   headers?: Record<string, string>;
@@ -43,48 +45,17 @@ function serializeCookies(cookies: Record<string, string>): string {
  * Stateless HTTP request — does not maintain session state.
  */
 export async function httpRequest(url: string, opts?: RequestOptions): Promise<HttpResult> {
-  const start = Date.now();
-  try {
-    const res = await fetch(url, {
-      method: opts?.method ?? "GET",
+  return executeSecurityRequest(
+    url,
+    {
+      method: opts?.method,
       headers: opts?.headers,
       body: opts?.body,
+      timeoutMs: opts?.timeoutMs,
       redirect: opts?.followRedirects === false ? "manual" : "follow",
-      signal: AbortSignal.timeout(opts?.timeoutMs ?? 15_000),
-    });
-    const body = await res.text().catch(() => "");
-    const headers: Record<string, string> = {};
-    res.headers.forEach((v, k) => { headers[k] = v; });
-
-    // Collect all Set-Cookie headers
-    const setCookies: string[] = [];
-    if (typeof (res.headers as { getSetCookie?: () => string[] }).getSetCookie === "function") {
-      setCookies.push(...((res.headers as { getSetCookie: () => string[] }).getSetCookie()));
-    } else if (headers["set-cookie"]) {
-      setCookies.push(headers["set-cookie"]);
-    }
-
-    return {
-      status: res.status,
-      headers,
-      setCookies,
-      body: body.slice(0, 20_000),
-      latency: Date.now() - start,
-      redirected: res.redirected,
-      finalUrl: res.url || url,
-    };
-  } catch (err: unknown) {
-    return {
-      status: 0,
-      headers: {},
-      setCookies: [],
-      body: "",
-      latency: Date.now() - start,
-      redirected: false,
-      finalUrl: url,
-      error: err instanceof Error ? err.message : String(err),
-    };
-  }
+    },
+    20_000
+  );
 }
 
 /**

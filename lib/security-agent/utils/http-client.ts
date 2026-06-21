@@ -3,6 +3,8 @@
  * response metadata capture, and safe error handling.
  */
 
+import { executeSecurityRequest } from "../../utils/securityHttpClient";
+
 export interface HttpResponse {
   status: number;
   headers: Record<string, string>;
@@ -24,26 +26,26 @@ export async function httpRequest(
     redirect?: RequestRedirect;
   }
 ): Promise<HttpResponse> {
-  const start = Date.now();
-  try {
-    const res = await fetch(url, {
-      method: opts?.method ?? "GET",
+  const baseRes = await executeSecurityRequest(
+    url,
+    {
+      method: opts?.method,
       headers: opts?.headers,
       body: opts?.body,
+      timeoutMs: opts?.timeoutMs,
       redirect: opts?.redirect ?? "manual",
-      signal: AbortSignal.timeout(opts?.timeoutMs ?? 15_000),
-    });
-    const body = await res.text().catch(() => "");
-    const headers: Record<string, string> = {};
-    res.headers.forEach((v, k) => { headers[k] = v; });
-    return { status: res.status, headers, body: body.slice(0, 10_000), latency: Date.now() - start };
-  } catch (err: unknown) {
-    return {
-      status: 0,
-      headers: {},
-      body: "",
-      latency: Date.now() - start,
-      error: err instanceof Error ? err.message : String(err),
-    };
+    },
+    10_000
+  );
+
+  const result: HttpResponse = {
+    status: baseRes.status,
+    headers: baseRes.headers,
+    body: baseRes.body,
+    latency: baseRes.latency,
+  };
+  if (baseRes.error !== undefined) {
+    result.error = baseRes.error;
   }
+  return result;
 }

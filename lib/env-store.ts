@@ -1,7 +1,7 @@
 /**
  * Env-var store backed by Neon PostgreSQL (serverless).
  *
- * Values are encrypted with AES-256-GCM using the NEXTAUTH_SECRET before
+ * Values are encrypted with AES-256-GCM using the ENCRYPTION_KEY before
  * being written to the DB, so secrets are never stored in plaintext.
  *
  * Data persists across:

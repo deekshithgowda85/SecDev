@@ -39,10 +39,27 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, error: "baseUrl is required" }, { status: 400 });
   }
 
-  // Basic URL validation — must start with http(s)://
-  if (!/^https?:\/\/.+/i.test(baseUrl)) {
+  // URL validation — reject malformed URLs and private/internal addresses
+  let parsedUrl: URL;
+  try {
+    parsedUrl = new URL(baseUrl);
+  } catch {
+    return NextResponse.json({ ok: false, error: "Invalid URL" }, { status: 400 });
+  }
+
+  if (parsedUrl.protocol !== "http:" && parsedUrl.protocol !== "https:") {
     return NextResponse.json(
-      { ok: false, error: "baseUrl must start with http:// or https://" },
+      { ok: false, error: "baseUrl must use http or https" },
+      { status: 400 }
+    );
+  }
+
+  const PRIVATE_HOST_RE =
+    /^(localhost$|127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|169\.254\.|0\.0\.0\.0$|::1$)/;
+
+  if (PRIVATE_HOST_RE.test(parsedUrl.hostname)) {
+    return NextResponse.json(
+      { ok: false, error: "Scanning private or internal addresses is not allowed" },
       { status: 400 }
     );
   }

@@ -73,24 +73,29 @@ async function probeEndpoint(baseUrl: string, path: string): Promise<string[] | 
   // 0 = network error, treat as not found
   if (initial.status === 0 || initial.status === 404) return null;
 
-  const accepted: string[] = initial.status !== 405 ? ["GET"] : [];
+  const accepted = new Set<string>();
 
-  // Probe other methods in parallel
-  const otherMethods = HTTP_METHODS.filter((m) => m !== "GET");
-  const probes = await Promise.all(
-    otherMethods.map(async (method) => {
-      const res = await httpRequest(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({}),
-        timeoutMs: 5_000,
-      });
-      return res.status !== 405 && res.status !== 0 ? method : null;
-    })
-  );
+  // GET successfully verifies if the status is not 405 Method Not Allowed
+  if (initial.status !== 405) {
+    accepted.add("GET");
+  }
 
-  for (const m of probes) if (m) accepted.push(m);
-  return accepted.length > 0 ? accepted : ["GET"];
+  // Check the Allow header of the response to parse accepted methods safely
+  const allowHeader = Object.entries(initial.headers).find(
+    ([k]) => k.toLowerCase() === "allow"
+  )?.[1];
+
+  if (allowHeader) {
+    const parsed = allowHeader
+      .split(",")
+      .map((m) => m.trim().toUpperCase())
+      .filter((m) => (HTTP_METHODS as readonly string[]).includes(m));
+    for (const m of parsed) {
+      accepted.add(m);
+    }
+  }
+
+  return Array.from(accepted);
 }
 
 /**
@@ -160,7 +165,7 @@ export async function discoverRoutes(baseUrl: string, sandboxId?: string): Promi
       const category = categorize(path);
       return {
         path,
-        methods: path.startsWith("/api/") ? ["GET", "POST"] : ["GET"],
+        methods: ["GET"],
         category,
         type: (path.startsWith("/api/") ? "api" : "page") as "api" | "page",
         priority: PRIORITY[category],

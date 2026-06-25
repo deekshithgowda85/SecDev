@@ -298,6 +298,10 @@ export function RepositoryList({
       const filteredNew = processedFiles.filter(f => !existingNames.has(f.name));
       return [...prev, ...filteredNew];
     });
+
+    if (e.target) {
+      (e.target as HTMLInputElement).value = "";
+    }
   }, []);
 
   const removeFile = (id: string) => {
@@ -437,38 +441,6 @@ export function RepositoryList({
           </div>
         )}
       </div>
-
-      {/* Control Navigation Header */}
-      {!compact && (
-        <div className="flex flex-col sm:flex-row sm:items-center gap-3 bg-white dark:bg-zinc-900 p-3 rounded-xl border border-gray-200 dark:border-zinc-800 shadow-sm">
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-zinc-500" />
-            <input
-              type="text"
-              placeholder="Search repositories..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full bg-gray-50 dark:bg-zinc-800/50 border border-gray-200 dark:border-zinc-700 rounded-lg pl-9 pr-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all dark:text-white placeholder:text-gray-400 dark:placeholder:text-zinc-500"
-            />
-          </div>
-          <div className="flex items-center gap-3 sm:ml-auto">
-            <div className="relative flex items-center">
-              <ArrowUpDown className="absolute left-2.5 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
-              <select value={sortBy} onChange={(e) => setSortBy(e.target.value as SortOption)} className="appearance-none bg-gray-50 dark:bg-zinc-800/50 border border-gray-200 dark:border-zinc-700 rounded-lg pl-8 pr-8 py-2 text-sm font-medium outline-none cursor-pointer dark:text-white focus:ring-2 focus:ring-indigo-500/20">
-                <option value="updated">Recently Updated</option>
-                <option value="name">Alphabetical</option>
-                <option value="stars">Most Stars</option>
-              </select>
-            </div>
-            {showViewToggle && (
-              <div className="flex items-center gap-1 p-1 bg-gray-100 dark:bg-zinc-800 rounded-lg border border-gray-200 dark:border-zinc-700">
-                <button onClick={() => setView("table")} className={`p-1.5 rounded-md transition-all ${view === "table" ? "bg-white dark:bg-zinc-700 shadow-sm ring-1 ring-gray-200 dark:ring-zinc-600" : "text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"}`}><List className="w-4 h-4" /></button>
-                <button onClick={() => setView("grid")} className={`p-1.5 rounded-md transition-all ${view === "grid" ? "bg-white dark:bg-zinc-700 shadow-sm ring-1 ring-gray-200 dark:ring-zinc-600" : "text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"}`}><LayoutGrid className="w-4 h-4" /></button>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
 
       {/* Deployment Banner */}
       {deployMsg && (

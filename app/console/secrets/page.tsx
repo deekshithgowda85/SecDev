@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Key, ShieldCheck, Eye, EyeOff, Save, Check, RefreshCw, AlertCircle } from "lucide-react";
+import { Key, Eye, EyeOff, Save, Check, RefreshCw, AlertCircle } from "lucide-react";
 
 export default function SecretsPage() {
   // Visibility States for sensitive keys (Fixes #50)

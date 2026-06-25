@@ -542,7 +542,7 @@ export default function Page() {
   const [layerStartTimes, setLayerStartTimes] = useState<Record<string, number>>({});
   const abortRef = useRef(false);
 
-  const selectedDeployment = deployments.find((d) => d.sandboxId === selectedSandbox);
+  const selectedDeployment = useMemo(() => deployments.find((d) => d.sandboxId === selectedSandbox), [deployments, selectedSandbox]);
 
   const [announcement, setAnnouncement] = useState("");
   const announcementTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -692,10 +692,10 @@ export default function Page() {
     fetchHistory();
   }, [selectedSandbox, selectedDeployment, runLayer, fetchHistory]);
 
-  const handleStop = () => {
+  const handleStop = useCallback(() => {
     abortRef.current = true;
     setRunning(false);
-  };
+  }, []);
 
   /* ── AI report generation ── */
   const handleGenerateReport = async () => {

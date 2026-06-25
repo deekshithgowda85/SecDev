@@ -40,26 +40,25 @@ export default function RegisterPage() {
   setLoading(true);
 
   try {
-    const result = await signIn("credentials", {
-      email: trimmedEmail,
-      password,
-      redirect: false,
-      callbackUrl: "/console/dashboard",
+    const response = await fetch("/api/auth/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: trimmedEmail, password }),
     });
 
-      const payload = (await response.json()) as { ok?: boolean; error?: string; detail?: string };
+    const payload = (await response.json()) as { ok?: boolean; error?: string; detail?: string };
 
-      if (!response.ok || !payload.ok) {
-        throw new Error(payload.error ?? payload.detail ?? "Registration failed");
-      }
-
-      router.push("/login");
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Registration failed");
-    } finally {
-      setLoading(false);
+    if (!response.ok || !payload.ok) {
+      throw new Error(payload.error ?? payload.detail ?? "Registration failed");
     }
+
+    router.push("/login");
+  } catch (err: unknown) {
+    setError(err instanceof Error ? err.message : "Registration failed");
+  } finally {
+    setLoading(false);
   }
+}
 
   return (
     <div className="flex min-h-[100vh] w-full">

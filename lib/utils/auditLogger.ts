@@ -15,6 +15,7 @@ export interface AuditEvent {
 
 export const auditLogger = {
   log: (action: string, severity: SeverityLevel = "info", details?: string) => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const event: AuditEvent = {
       id: crypto.randomUUID(),
       timestamp: Date.now(),

@@ -39,9 +39,12 @@ export async function fetchWithRetry(url: string, options: FetchRetryOptions = {
 
       console.warn(`[HTTP Client] 5xx Server Error on ${url}.`);
 
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errMsg = error instanceof Error ? error.message : String(error);
+      const errName = error instanceof Error ? error.name : "";
+
       // If the user or a system explicitly aborted the request (like Issue #53), DO NOT retry.
-      if (error.name === "AbortError") {
+      if (errName === "AbortError") {
         throw error;
       }
 
@@ -50,7 +53,7 @@ export async function fetchWithRetry(url: string, options: FetchRetryOptions = {
         throw new Error(`[HTTP Client] Network failure. Exhausted all ${retries} retry attempts for ${url}.`);
       }
 
-      console.warn(`[HTTP Client] Network drop on ${url}: ${error.message}`);
+      console.warn(`[HTTP Client] Network drop on ${url}: ${errMsg}`);
     }
 
     // --- EXPONENTIAL BACKOFF MATH ---
@@ -71,7 +74,7 @@ export async function fetchWithRetry(url: string, options: FetchRetryOptions = {
 
 export const httpClient = {
   get: (url: string, options?: FetchRetryOptions) => fetchWithRetry(url, { ...options, method: 'GET' }),
-  post: (url: string, body: any, options?: FetchRetryOptions) => fetchWithRetry(url, { 
+  post: (url: string, body: unknown, options?: FetchRetryOptions) => fetchWithRetry(url, { 
     ...options, 
     method: 'POST', 
     headers: { 'Content-Type': 'application/json', ...options?.headers },

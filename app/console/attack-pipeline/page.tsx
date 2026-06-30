@@ -231,7 +231,7 @@ export default function AttackPipelinePage() {
   const [useAi, setUseAi] = useState(true);
   const [includePerf, setIncludePerf] = useState(false);
   const [scanning, setScanning] = useState(false);
-  const [logs, setLogs] = useState<string[]>([]);
+
   const [report, setReport] = useState<Report | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [runs, setRuns] = useState<RunMeta[]>([]);
@@ -291,8 +291,7 @@ export default function AttackPipelinePage() {
   const appendLog = (text: string) => {
     const id = `log-${++logCounterRef.current}`;
     setLogLines((prev) => [...prev, { id, text }]);
-    // Keep legacy `logs` in sync for anything that reads it
-    setLogs((prev) => [...prev, text]);
+
   };
 
   const loadReport = async (runId: string) => {
@@ -302,7 +301,7 @@ export default function AttackPipelinePage() {
       if (data.ok && data.report) {
         setReport(data.report as Report);
         setLogLines([]);
-        setLogs([]);
+
         setError(null);
       }
     } catch { /* ignore */ }
@@ -330,7 +329,7 @@ export default function AttackPipelinePage() {
     setError(null);
     setReport(null);
     setLogLines([]);
-    setLogs([]);
+
     setScanning(true);
     currentRunIdRef.current = null;
     abortRef.current = new AbortController();

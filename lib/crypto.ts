@@ -5,7 +5,6 @@ import crypto from "crypto";
 const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY;
 const ALGORITHM = "aes-256-gcm";
 const IV_LENGTH = 12; // Standard IV size for GCM
-const AUTH_TAG_LENGTH = 16;
 
 /**
  * Validates and retrieves the operational encryption key buffer.

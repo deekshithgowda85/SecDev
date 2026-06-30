@@ -251,12 +251,16 @@ export function RepositoryList({
     setIsDragActive(false);
   }, []);
 
-  const handleDrop = useCallback(async (e: React.DragEvent | any) => {
+  const handleDrop = useCallback(async (e: React.DragEvent<HTMLElement> | React.ChangeEvent<HTMLInputElement>) => {
     e.preventDefault();
     setIsDragActive(false);
     setFileError(null);
 
-    const files = Array.from(e.dataTransfer?.files || e.target?.files || []) as File[];
+    const files = Array.from(
+      ('dataTransfer' in e && e.dataTransfer ? e.dataTransfer.files : null) || 
+      ('target' in e && e.target ? (e.target as HTMLInputElement).files : null) || 
+      []
+    ) as File[];
     const validFiles: File[] = [];
 
     // Validation Checkpoint
@@ -294,6 +298,10 @@ export function RepositoryList({
       const filteredNew = processedFiles.filter(f => !existingNames.has(f.name));
       return [...prev, ...filteredNew];
     });
+
+    if (e.target) {
+      (e.target as HTMLInputElement).value = "";
+    }
   }, []);
 
   const removeFile = (id: string) => {
@@ -315,8 +323,7 @@ export function RepositoryList({
   const sortedRepos = useMemo(() => {
     return [...filteredRepos].sort((a, b) => {
       if (sortBy === "name") return a.name.localeCompare(b.name);
-      // Fixed: Using `as any` bypasses strict interface checking for the optional stargazers_count
-      if (sortBy === "stars") return ((b as any).stargazers_count ?? 0) - ((a as any).stargazers_count ?? 0);
+      if (sortBy === "stars") return (b.stars ?? 0) - (a.stars ?? 0);
       return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
     });
   }, [filteredRepos, sortBy]);
@@ -335,13 +342,6 @@ export function RepositoryList({
         <p className="text-base font-semibold text-gray-900 dark:text-white mb-1">Connect your GitHub Identity</p>
         <p className="text-sm text-gray-500 dark:text-zinc-400 mb-6 max-w-sm">
           Link your GitHub profile to fetch repositories, analyze codebases, and enable one-click deployments.
-      <div className="flex flex-col items-center justify-center py-16 text-center bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl">
-        <Github className="w-10 h-10 text-gray-300 dark:text-zinc-600 mb-3" />
-        <p className="text-sm font-semibold text-gray-900 dark:text-white mb-1">
-          Connect your GitHub account
-        </p>
-        <p className="text-xs text-gray-500 dark:text-zinc-500 mb-4 max-w-xs">
-          Connect GitHub to access your repositories and deploy both public and private projects from your account.
         </p>
         <button
           type="button"
@@ -381,10 +381,6 @@ export function RepositoryList({
               ? "border-indigo-500 bg-indigo-50/50 dark:bg-indigo-500/10 dark:border-indigo-400 scale-[1.01]" 
               : "border-gray-300 dark:border-zinc-700 hover:bg-gray-50 dark:hover:bg-zinc-800/50"
           }`}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm border ${deployMsg.ok
-              ? "bg-green-50 dark:bg-green-500/10 border-green-200 dark:border-green-500/20 text-green-700 dark:text-green-400"
-              : "bg-red-50 dark:bg-red-500/10 border-red-200 dark:border-red-500/20 text-red-700 dark:text-red-400"
-            }`}
         >
           <UploadCloud className={`w-10 h-10 mb-3 transition-colors ${isDragActive ? "text-indigo-500" : "text-gray-400 dark:text-zinc-500"}`} />
           <p className="text-sm font-medium text-gray-700 dark:text-zinc-300">
@@ -416,39 +412,6 @@ export function RepositoryList({
               <button 
                 onClick={() => setInjectedFiles([])} 
                 className="text-[10px] font-medium text-gray-400 hover:text-red-500 transition-colors"
-      {/* Controls */}
-      {!compact && (
-        <div className="flex items-center gap-3">
-          <input
-            type="text"
-            aria-label="Search repositories"
-            placeholder="Search repositories…"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="flex-1 max-w-xs bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-zinc-500 focus:outline-none focus:border-gray-500 dark:focus:border-zinc-400 transition-colors"
-          />
-          <span className="text-xs text-gray-500 dark:text-zinc-500 ml-auto">
-            {loading ? "Loading…" : `${filtered.length} repos`}
-          </span>
-          {showViewToggle && (
-            <div className="flex items-center gap-1 p-1 bg-gray-100 dark:bg-zinc-800 rounded-lg">
-              <button
-                onClick={() => setView("table")}
-                className={`p-1.5 rounded-md transition-colors ${view === "table"
-                    ? "bg-white dark:bg-zinc-700 text-gray-900 dark:text-white shadow-sm"
-                    : "text-gray-400 dark:text-zinc-500 hover:text-gray-700 dark:hover:text-zinc-300"
-                  }`}
-                title="Table view"
-              >
-                <List className="w-4 h-4" />
-              </button>
-              <button
-                onClick={() => setView("grid")}
-                className={`p-1.5 rounded-md transition-colors ${view === "grid"
-                    ? "bg-white dark:bg-zinc-700 text-gray-900 dark:text-white shadow-sm"
-                    : "text-gray-400 dark:text-zinc-500 hover:text-gray-700 dark:hover:text-zinc-300"
-                  }`}
-                title="Grid view"
               >
                 Clear All
               </button>
@@ -516,32 +479,6 @@ export function RepositoryList({
                 <button onClick={() => setView("grid")} className={`p-1.5 rounded-md transition-all ${view === "grid" ? "bg-white dark:bg-zinc-700 shadow-sm ring-1 ring-gray-200 dark:ring-zinc-600" : "text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"}`}><LayoutGrid className="w-4 h-4" /></button>
               </div>
             )}
-      {/* Loading skeletons */}
-      {loading && (
-        view === "grid" ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <SkeletonCard key={`repo-skeleton-card-${i}`} />
-            ))}
-          </div>
-        ) : (
-          <div className="overflow-x-auto rounded-xl border border-gray-200 dark:border-zinc-800">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="bg-gray-50 dark:bg-zinc-800/60 border-b border-gray-200 dark:border-zinc-800">
-                  {["Repository", "Visibility", "Language", "Updated", "Actions"].map((h) => (
-                    <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 dark:text-zinc-400 uppercase tracking-wide">
-                      {h}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="bg-white dark:bg-zinc-900">
-                {Array.from({ length: 6 }).map((_, i) => (
-                  <SkeletonRow key={`repo-skeleton-row-${i}`} />
-                ))}
-              </tbody>
-            </table>
           </div>
         </div>
       )}

@@ -7,6 +7,7 @@ import {
   TestTube2, Shield, Zap, BarChart3, Box, Settings, CreditCard, User,
   ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Globe, Swords,
   Trophy,
+  Clock,
 } from "lucide-react";
 
 interface NavItem { label: string; href: string; icon: React.ElementType; }
@@ -57,6 +58,7 @@ const navGroups: NavGroup[] = [
     title: "Learning",
     items: [
       { label: "Achievement Timeline", href: "/console/achievements-timeline", icon: Trophy },
+      { label: "Learning Analytics", href: "/console/learning-analytics", icon: Clock },
     ],
   },
 ];

@@ -6,6 +6,7 @@ import {
   LayoutDashboard, Rocket, FolderGit2, KeyRound, Terminal,
   TestTube2, Shield, Zap, BarChart3, Box, Settings, CreditCard, User,
   ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Globe, Swords,
+  Target,
 } from "lucide-react";
 
 interface NavItem { label: string; href: string; icon: React.ElementType; }
@@ -50,6 +51,12 @@ const navGroups: NavGroup[] = [
       { label: "Settings", href: "/console/settings", icon: Settings },
       { label: "Billing", href: "/console/billing", icon: CreditCard },
       { label: "Account", href: "/console/account", icon: User },
+    ],
+  },
+  {
+    title: "Learning",
+    items: [
+      { label: "Learning Goals", href: "/console/learning-goals", icon: Target },
     ],
   },
 ];

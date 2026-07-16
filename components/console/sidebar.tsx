@@ -6,7 +6,9 @@ import {
   LayoutDashboard, Rocket, FolderGit2, KeyRound, Terminal,
   TestTube2, Shield, Zap, BarChart3, Box, Settings, CreditCard, User,
   ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Globe, Swords,
-  CalendarClock,
+  Trophy,
+  Sparkles,
+  Clock,
 } from "lucide-react";
 
 interface NavItem { label: string; href: string; icon: React.ElementType; }
@@ -56,7 +58,9 @@ const navGroups: NavGroup[] = [
   {
     title: "Learning",
     items: [
-      { label: "Revision Scheduler", href: "/console/revision-scheduler", icon: CalendarClock },
+      { label: "Achievement Timeline", href: "/console/achievements-timeline", icon: Trophy },
+      { label: "Recommendations", href: "/console/recommendations", icon: Sparkles },
+      { label: "Learning Analytics", href: "/console/learning-analytics", icon: Clock },
     ],
   },
 ];

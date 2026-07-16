@@ -6,6 +6,7 @@ import {
   LayoutDashboard, Rocket, FolderGit2, KeyRound, Terminal,
   TestTube2, Shield, Zap, BarChart3, Box, Settings, CreditCard, User,
   ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Globe, Swords,
+  Sparkles,
   Clock,
 } from "lucide-react";
 
@@ -56,6 +57,7 @@ const navGroups: NavGroup[] = [
   {
     title: "Learning",
     items: [
+      { label: "Recommendations", href: "/console/recommendations", icon: Sparkles },
       { label: "Learning Analytics", href: "/console/learning-analytics", icon: Clock },
     ],
   },

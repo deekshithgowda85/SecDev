@@ -811,7 +811,7 @@ The application will be available at:
 ```text
 http://localhost:3000
 ```
-
+> **Note:** If port 3000 is already in use, start the development server on another available port and use the displayed local URL.
 ---
 
 ### Run Lint Checks
